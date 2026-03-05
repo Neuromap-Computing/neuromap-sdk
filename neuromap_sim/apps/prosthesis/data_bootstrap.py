@@ -51,12 +51,23 @@ def _bootstrap_ljspeech(raw_root: Path, clean_out: Path, limit: int | None) -> d
 
 
 def _find_urbansound8k_root(urban_cache_root: Path) -> Path:
+    # soundata may extract directly into data_home, or into a nested urbansound8k folder.
+    if (urban_cache_root / "audio").exists() and (urban_cache_root / "metadata").exists():
+        return urban_cache_root
+
     candidate = urban_cache_root / "urbansound8k"
     if candidate.exists():
         return candidate
+    candidate_upper = urban_cache_root / "UrbanSound8K"
+    if candidate_upper.exists():
+        return candidate_upper
+
     if urban_cache_root.exists():
         for child in urban_cache_root.iterdir():
-            if child.is_dir() and child.name.lower() == "urbansound8k":
+            if child.is_dir() and (
+                child.name.lower() == "urbansound8k"
+                or ((child / "audio").exists() and (child / "metadata").exists())
+            ):
                 return child
     raise FileNotFoundError(
         f"Unable to locate UrbanSound8K root under '{urban_cache_root}'. "

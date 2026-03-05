@@ -93,6 +93,23 @@ def _build_noise_label_map(noise_metadata_csv: Path | None) -> dict[str, str]:
         return {row["slice_file_name"]: row.get("class", "unknown") for row in reader}
 
 
+def _load_valid_audio_candidates(
+    paths: list[Path],
+    *,
+    sample_rate: int,
+) -> tuple[list[tuple[Path, np.ndarray]], list[Path]]:
+    valid: list[tuple[Path, np.ndarray]] = []
+    skipped: list[Path] = []
+    for path in paths:
+        try:
+            audio, _ = load_audio_mono(str(path), target_sample_rate=sample_rate)
+        except ValueError:
+            skipped.append(path)
+            continue
+        valid.append((path, audio))
+    return valid, skipped
+
+
 def _infer_noise_type(noise_path: Path, noise_label_map: dict[str, str]) -> str:
     filename = noise_path.name
     if filename in noise_label_map:
@@ -229,23 +246,34 @@ def generate_prosthesis_dataset(
     rng = np.random.default_rng(cfg.seed)
 
     clean_paths_all = _discover_wavs(Path(clean_dir))
-    noise_paths = _discover_wavs(Path(noise_dir))
+    noise_paths_all = _discover_wavs(Path(noise_dir))
     target_samples = int(round(cfg.clip_seconds * cfg.sample_rate))
     min_duration_samples = int(round(cfg.min_duration_seconds * cfg.sample_rate))
     noise_label_map = _build_noise_label_map(
         Path(cfg.noise_metadata_csv) if cfg.noise_metadata_csv else None
     )
 
-    clean_candidates: list[Path] = []
+    clean_candidates_loaded: list[tuple[Path, np.ndarray]] = []
     for clean_path in clean_paths_all:
         clean_audio, _ = load_audio_mono(str(clean_path), target_sample_rate=cfg.sample_rate)
         if clean_audio.size >= min_duration_samples:
-            clean_candidates.append(clean_path)
+            clean_candidates_loaded.append((clean_path, clean_audio))
 
-    if not clean_candidates:
+    valid_noise_loaded, skipped_noise_paths = _load_valid_audio_candidates(
+        noise_paths_all, sample_rate=cfg.sample_rate
+    )
+
+    if not clean_candidates_loaded:
         raise ValueError("No clean files passed minimum-duration filtering.")
+    if not valid_noise_loaded:
+        raise ValueError("No readable noise files found. All candidate noise files were skipped.")
     if cfg.max_pairs is not None and cfg.max_pairs > 0:
-        clean_candidates = clean_candidates[: cfg.max_pairs]
+        clean_candidates_loaded = clean_candidates_loaded[: cfg.max_pairs]
+
+    clean_candidates = [path for path, _ in clean_candidates_loaded]
+    clean_audio_map = {path: audio for path, audio in clean_candidates_loaded}
+    noise_audio_map = {path: audio for path, audio in valid_noise_loaded}
+    noise_paths = [path for path, _ in valid_noise_loaded]
 
     split_assignments = _assign_splits(
         clean_candidates,
@@ -265,8 +293,8 @@ def generate_prosthesis_dataset(
     for sample_idx, (clean_path, split) in enumerate(zip(clean_candidates, split_assignments, strict=True)):
         noise_path = noise_paths[int(rng.integers(0, len(noise_paths)))]
         snr_db = float(rng.choice(snr_values))
-        clean_audio, _ = load_audio_mono(str(clean_path), target_sample_rate=cfg.sample_rate)
-        noise_audio, _ = load_audio_mono(str(noise_path), target_sample_rate=cfg.sample_rate)
+        clean_audio = clean_audio_map[clean_path]
+        noise_audio = noise_audio_map[noise_path]
 
         clean_clip = _fit_length(clean_audio, target_samples, rng)
         noise_clip = _fit_length(noise_audio, target_samples, rng)
@@ -356,6 +384,7 @@ def generate_prosthesis_dataset(
         "num_samples": len(rows),
         "num_clean_candidates": len(clean_candidates),
         "num_noise_candidates": len(noise_paths),
+        "num_noise_skipped_unreadable": len(skipped_noise_paths),
         "dataset_report": str(report_path),
     }
 

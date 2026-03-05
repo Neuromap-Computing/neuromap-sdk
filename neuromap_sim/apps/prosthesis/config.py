@@ -1,4 +1,4 @@
-"""Configuration dataclasses for prosthesis data bootstrap and generation."""
+"""Configuration dataclasses for prosthesis data bootstrap, generation, and training."""
 
 from __future__ import annotations
 
@@ -51,4 +51,57 @@ class ProsthesisDatasetConfig:
         payload = asdict(self)
         payload["features"] = self.features.to_dict()
         return payload
+
+
+@dataclass(slots=True)
+class ProsthesisTrainConfig:
+    """Configuration for training a prosthesis SNN via the SDK."""
+
+    # Network
+    hidden_size: int = 128
+    use_decoder: bool = True
+    chip_name: str | None = None  # None = auto-detect topology from data
+
+    # Training
+    epochs: int = 40
+    batch_size: int = 16
+    learning_rate: float = 3e-4
+    weight_decay: float = 1e-6
+    grad_clip_norm: float = 1.0
+    scheduler: str = "plateau"
+    scheduler_factor: float = 0.5
+    scheduler_patience: int = 2
+    min_learning_rate: float = 1e-6
+    lr_warmup_epochs: int = 3
+    early_stop_patience: int = 8
+    early_stop_min_delta: float = 1e-4
+    loss_alpha: float = 0.8
+
+    # Data
+    feature_sample_rate: int = 16_000
+    max_train_rows: int = 0
+    max_val_rows: int = 0
+    num_workers: int = 0
+    target_cache_size: int = 256
+    seed: int = 42
+    device: str = ""
+
+    # Feature extraction (for clean target recomputation)
+    features: GammatoneFeatureConfig = field(default_factory=GammatoneFeatureConfig)
+
+    def to_dict(self) -> dict[str, Any]:
+        payload = asdict(self)
+        payload["features"] = self.features.to_dict()
+        return payload
+
+
+@dataclass(slots=True)
+class ProsthesisExportConfig:
+    """Configuration for exporting a trained prosthesis model."""
+
+    bits: int = 4
+    chip_name: str | None = None
+
+    def to_dict(self) -> dict[str, Any]:
+        return asdict(self)
 

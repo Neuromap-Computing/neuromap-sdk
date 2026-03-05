@@ -24,6 +24,7 @@ class NeuromapSNN(nn.Module):
         output_size: int = 10,
         layer1_kwargs: Mapping[str, Any] | None = None,
         layer2_kwargs: Mapping[str, Any] | None = None,
+        use_decoder: bool = True,
     ) -> None:
         super().__init__()
         self.input_size = input_size
@@ -31,6 +32,18 @@ class NeuromapSNN(nn.Module):
         self.output_size = output_size
         self.layer1 = LIFLayer(input_size, hidden_size, **dict(layer1_kwargs or {}))
         self.layer2 = LIFLayer(hidden_size, output_size, **dict(layer2_kwargs or {}))
+        self.decoder = nn.Linear(output_size, output_size) if use_decoder else None
+
+    def forward_sequence(self, x: torch.Tensor) -> torch.Tensor:
+        """Per-frame continuous predictions for denoising (avoids rate collapse).
+
+        Returns shape (batch, frames, output_size) as continuous floats.
+        """
+        spikes1, _ = self.layer1(x, return_state=True)   # (batch, frames, hidden)
+        spikes2, _ = self.layer2(spikes1, return_state=True)  # (batch, frames, output)
+        if self.decoder is not None:
+            return self.decoder(spikes2)                  # (batch, frames, output) continuous
+        return spikes2
 
     def forward(
         self,
