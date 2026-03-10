@@ -16,7 +16,7 @@ pip install -e ".[dev]"
 ## Build a network
 
 Every network starts from a **chip specification** that describes the
-hardware topology:
+hardware topology: 
 
 ```python
 from neuromap import Network, chips
