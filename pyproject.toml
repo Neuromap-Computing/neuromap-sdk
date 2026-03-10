@@ -24,15 +24,15 @@ classifiers = [
     "Programming Language :: Python :: 3.13",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
-[project.urls]
-Homepage = "https://neuromap-two.vercel.app"
-Repository = "https://github.com/laurent-colas/neuromap"
-"Bug Tracker" = "https://github.com/laurent-colas/neuromap/issues"
-
 dependencies = [
     "torch>=2.0",
     "numpy>=1.24",
 ]
+
+[project.urls]
+Homepage = "https://neuromap-two.vercel.app"
+Repository = "https://github.com/laurent-colas/neuromap"
+"Bug Tracker" = "https://github.com/laurent-colas/neuromap/issues"
 
 [project.optional-dependencies]
 dev = [
