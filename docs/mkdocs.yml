@@ -1,5 +1,5 @@
 site_name: Neuromap SDK
-site_description: SDK for programming Neuromap neuromorphic chips
+site_description: SDK for programming Neuromap neuromorphic chip
 repo_url: https://github.com/neuromap/neuromap
 
 theme:
