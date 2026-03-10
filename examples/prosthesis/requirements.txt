@@ -1,0 +1,5 @@
+neuromap
+scipy
+torchaudio
+soundata
+scikit-learn
