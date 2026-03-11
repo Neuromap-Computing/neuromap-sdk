@@ -153,10 +153,74 @@ class Exporter:
             net.to(device)
         return net
 
+    def to_bytes(self) -> bytes:
+        """Export the model as in-memory ``.nmap`` bytes.
+
+        This is used by :meth:`Network.deploy` to program a board
+        without writing to disk.
+
+        Returns:
+            ZIP archive bytes identical to what :meth:`save` would write.
+        """
+        import hashlib
+
+        manifest = self._build_manifest()
+        weight_map = self.to_weight_map()
+
+        # Build hw_layout before writing the ZIP so manifest is written once
+        hw_packed: dict[str, bytes] = {}
+        if self._quantized:
+            from neuromap._internal.packing import pack_weights_nibble
+
+            chip = self._network.chip
+            bits = self._bits or chip.weight_bits
+            all_packed = b""
+            hw_layers: list[dict[str, Any]] = []
+            for i in range(len(chip.layers) - 1):
+                for wname, arr in weight_map.items():
+                    if "weight" in wname and arr.ndim == 2:
+                        rows, cols = arr.shape
+                        if rows == chip.layers[i + 1] and cols == chip.layers[i]:
+                            packed = pack_weights_nibble(
+                                arr.astype(np.int8), bits=bits
+                            )
+                            hw_packed[f"hw/layer_{i}.bin"] = packed
+                            hw_layers.append({
+                                "index": i,
+                                "file": f"hw/layer_{i}.bin",
+                                "rows": rows,
+                                "cols": cols,
+                                "size_bytes": len(packed),
+                            })
+                            all_packed += packed
+                            break
+
+            manifest["hw_layout"] = {
+                "weight_packing": "nibble_signed_4bit",
+                "byte_order": "little",
+                "layers": hw_layers,
+                "total_weight_bytes": len(all_packed),
+            }
+            manifest["deploy_checksum"] = (
+                "sha256:" + hashlib.sha256(all_packed).hexdigest()
+            )
+
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, "w", compression=zipfile.ZIP_DEFLATED) as zf:
+            zf.writestr("manifest.json", json.dumps(manifest, indent=2))
+            for name, arr in weight_map.items():
+                nbuf = io.BytesIO()
+                np.save(nbuf, arr, allow_pickle=False)
+                zf.writestr(f"weights/{name}.npy", nbuf.getvalue())
+            for hw_name, hw_data in hw_packed.items():
+                zf.writestr(hw_name, hw_data)
+
+        return buf.getvalue()
+
     def _build_manifest(self) -> dict[str, Any]:
         chip = self._network.chip
         return {
-            "format": "nmap-v1",
+            "format": "nmap-v2",
             "chip_spec": chip.to_dict(),
             "layers": list(chip.layers),
             "weight_bits": self._bits or chip.weight_bits,

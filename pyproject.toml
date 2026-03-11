@@ -27,6 +27,7 @@ classifiers = [
 dependencies = [
     "torch>=2.0",
     "numpy>=1.24",
+    "pyserial>=3.5",
 ]
 
 [project.urls]
@@ -39,6 +40,12 @@ dev = [
     "pytest>=7.0",
     "scipy",
 ]
+monitor = [
+    "matplotlib>=3.5",
+]
+
+[project.scripts]
+neuromap = "neuromap.cli:main"
 
 [tool.hatch.version]
 path = "src/neuromap/_version.py"

@@ -26,11 +26,16 @@ nav:
   - Home: index.md
   - Quickstart: quickstart.md
   - Concepts: concepts.md
+  - Board Guide: board.md
+  - Protocol Reference: protocol.md
   - API Reference:
       - chip: api/chip.md
       - network: api/network.md
       - trainer: api/trainer.md
       - export: api/export.md
+      - board: api/board.md
+      - monitor: api/monitor.md
+  - CLI Reference: cli.md
 
 markdown_extensions:
   - pymdownx.highlight
