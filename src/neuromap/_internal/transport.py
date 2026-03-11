@@ -1,11 +1,13 @@
 """Transport abstraction layer for Neuromap board communication.
 
 Provides :class:`Transport` ABC, :class:`SerialTransport` for real hardware,
+:class:`TcpTransport` for WiFi connections to ESP32 boards,
 :class:`MockTransport` + :class:`MockFirmware` for testing without a board.
 """
 
 from __future__ import annotations
 
+import socket
 import struct
 import threading
 import time
@@ -112,6 +114,70 @@ class SerialTransport(Transport):
     @property
     def is_open(self) -> bool:
         return self._serial is not None and self._serial.is_open
+
+
+# ---------------------------------------------------------------------------
+# TCP Transport (WiFi connection to ESP32)
+# ---------------------------------------------------------------------------
+
+
+class TcpTransport(Transport):
+    """TCP socket transport for WiFi connections to Neuromap boards.
+
+    Connects to the ESP32's NMP TCP server (default port 4840).
+    Carries the same binary NMP protocol as USB — no HTTP wrapping.
+
+    Args:
+        host: Hostname or IP address (e.g. ``"neuromap-A1B2.local"``
+            or ``"192.168.1.42"``).
+        port: TCP port number (default 4840).
+    """
+
+    NMP_DEFAULT_PORT = 4840
+
+    def __init__(self, host: str, port: int = NMP_DEFAULT_PORT) -> None:
+        self._host = host
+        self._port = port
+        self._sock: socket.socket | None = None
+
+    def open(self) -> None:
+        self._sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self._sock.settimeout(5.0)
+        try:
+            self._sock.connect((self._host, self._port))
+        except OSError as exc:
+            self._sock.close()
+            self._sock = None
+            raise ConnectionError(
+                f"Cannot connect to {self._host}:{self._port}: {exc}"
+            ) from exc
+
+    def close(self) -> None:
+        if self._sock is not None:
+            try:
+                self._sock.shutdown(socket.SHUT_RDWR)
+            except OSError:
+                pass
+            self._sock.close()
+            self._sock = None
+
+    def write(self, data: bytes) -> None:
+        if self._sock is None:
+            raise RuntimeError("Transport not open.")
+        self._sock.sendall(data)
+
+    def read(self, size: int, timeout_ms: int = 1000) -> bytes:
+        if self._sock is None:
+            raise RuntimeError("Transport not open.")
+        self._sock.settimeout(timeout_ms / 1000.0)
+        try:
+            return self._sock.recv(size)
+        except socket.timeout:
+            return b""
+
+    @property
+    def is_open(self) -> bool:
+        return self._sock is not None
 
 
 # ---------------------------------------------------------------------------

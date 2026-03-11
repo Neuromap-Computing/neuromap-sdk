@@ -43,6 +43,9 @@ dev = [
 monitor = [
     "matplotlib>=3.5",
 ]
+wifi = [
+    "zeroconf>=0.80",
+]
 
 [project.scripts]
 neuromap = "neuromap.cli:main"

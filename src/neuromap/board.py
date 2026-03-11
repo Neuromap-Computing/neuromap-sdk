@@ -15,6 +15,7 @@ Example::
 from __future__ import annotations
 
 import struct
+import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -27,6 +28,7 @@ from neuromap._internal.transport import (
     MockFirmware,
     MockTransport,
     SerialTransport,
+    TcpTransport,
     Transport,
 )
 from neuromap.protocol import (
@@ -113,11 +115,18 @@ class Board:
         *,
         timeout: float = 5.0,
     ) -> Board:
-        """Connect to a Neuromap board over USB serial.
+        """Connect to a Neuromap board over USB serial or WiFi TCP.
 
         Args:
-            port: Serial port path.  If ``None``, auto-discovers by
-                scanning ports and sending PING.
+            port: Connection target.  Accepts:
+
+                - **Serial port** path (e.g. ``"/dev/ttyACM0"``)
+                - **Hostname or IP** with optional port
+                  (e.g. ``"neuromap-A1B2.local"``,
+                  ``"192.168.1.42:4840"``)
+                - ``None`` to auto-discover (scans USB ports first,
+                  then mDNS on the local network).
+
             timeout: Discovery timeout in seconds.
 
         Returns:
@@ -128,6 +137,16 @@ class Board:
         """
         if port is None:
             port = cls._auto_discover(timeout)
+
+        # Detect if this is a TCP target (hostname/IP) vs serial port
+        if cls._is_tcp_target(port):
+            host, tcp_port = cls._parse_tcp_target(port)
+            transport: Transport = TcpTransport(host, tcp_port)
+            transport.open()
+            board = cls(transport, port_name=port)
+            board._ping()
+            return board
+
         transport = SerialTransport(port)
         transport.open()
         board = cls(transport, port_name=port)
@@ -138,22 +157,43 @@ class Board:
     def list_boards(cls) -> list[BoardInfo]:
         """Enumerate all connected Neuromap boards.
 
+        Scans USB serial ports and the local network (mDNS).
+
         Returns:
             List of :class:`BoardInfo` for each discovered board.
         """
-        ports = cls._scan_serial_ports()
         boards: list[BoardInfo] = []
-        for port in ports:
+        seen_ids: set[int] = set()
+
+        # Scan USB serial ports
+        for port in cls._scan_serial_ports():
             try:
-                transport = SerialTransport(port)
+                transport: Transport = SerialTransport(port)
                 transport.open()
                 board = cls(transport, port_name=port)
                 board._ping()
                 if board._info is not None:
                     boards.append(board._info)
+                    seen_ids.add(board._info.board_id)
                 transport.close()
             except Exception:
                 continue
+
+        # Scan mDNS for WiFi boards
+        for host, tcp_port in cls._discover_mdns(timeout=2.0):
+            try:
+                target = f"{host}:{tcp_port}"
+                transport = TcpTransport(host, tcp_port)
+                transport.open()
+                board = cls(transport, port_name=target)
+                board._ping()
+                if board._info is not None and board._info.board_id not in seen_ids:
+                    boards.append(board._info)
+                    seen_ids.add(board._info.board_id)
+                transport.close()
+            except Exception:
+                continue
+
         return boards
 
     @classmethod
@@ -476,18 +516,18 @@ class Board:
 
     @classmethod
     def _auto_discover(cls, timeout: float) -> str:
-        """Scan serial ports for a Neuromap board.
+        """Scan USB serial ports and mDNS for a Neuromap board.
 
         Returns:
-            The port path of the first discovered board.
+            The port path or ``"host:port"`` of the first discovered board.
 
         Raises:
             ConnectionError: If no board is found.
         """
-        ports = cls._scan_serial_ports()
-        for port in ports:
+        # Try USB serial first
+        for port in cls._scan_serial_ports():
             try:
-                transport = SerialTransport(port)
+                transport: Transport = SerialTransport(port)
                 transport.open()
                 pkt = Packet(cmd=Cmd.PING, seq=0)
                 transport.write(pkt.encode())
@@ -499,9 +539,90 @@ class Board:
                     return port
             except Exception:
                 continue
+
+        # Try mDNS discovery
+        for host, tcp_port in cls._discover_mdns(timeout=timeout):
+            try:
+                transport = TcpTransport(host, tcp_port)
+                transport.open()
+                pkt = Packet(cmd=Cmd.PING, seq=0)
+                transport.write(pkt.encode())
+                raw = transport.read(4106, timeout_ms=int(timeout * 1000))
+                codec = PacketCodec()
+                responses = codec.feed(raw)
+                transport.close()
+                if responses and responses[0].cmd == Cmd.PONG:
+                    return f"{host}:{tcp_port}"
+            except Exception:
+                continue
+
         raise ConnectionError(
-            "No Neuromap board found. Check USB connection and try again."
+            "No Neuromap board found. Check USB connection or WiFi and try again."
         )
+
+    @staticmethod
+    def _is_tcp_target(port: str) -> bool:
+        """Check if *port* looks like a TCP target rather than a serial port."""
+        # Serial ports: /dev/ttyXXX, COMx, etc.
+        if port.startswith("/dev/") or port.upper().startswith("COM"):
+            return False
+        # Hostnames, IPs, or .local addresses
+        if ".local" in port or ":" in port:
+            return True
+        # IP addresses (simple heuristic)
+        parts = port.split(".")
+        if len(parts) == 4 and all(p.isdigit() for p in parts):
+            return True
+        return False
+
+    @staticmethod
+    def _parse_tcp_target(target: str) -> tuple[str, int]:
+        """Parse ``"host:port"`` or ``"host"`` into (host, port)."""
+        default_port = TcpTransport.NMP_DEFAULT_PORT
+        if ":" in target:
+            # Could be "host:port" — but avoid splitting IPv6
+            parts = target.rsplit(":", 1)
+            if parts[1].isdigit():
+                return parts[0], int(parts[1])
+        return target, default_port
+
+    @staticmethod
+    def _discover_mdns(timeout: float = 3.0) -> list[tuple[str, int]]:
+        """Discover Neuromap boards via mDNS (zeroconf).
+
+        Returns:
+            List of ``(host, port)`` tuples for discovered boards.
+        """
+        try:
+            from zeroconf import ServiceBrowser, Zeroconf
+        except ImportError:
+            return []
+
+        results: list[tuple[str, int]] = []
+
+        class _Listener:
+            def add_service(self, zc: Zeroconf, type_: str, name: str) -> None:
+                info = zc.get_service_info(type_, name)
+                if info is not None:
+                    addresses = info.parsed_addresses()
+                    port = info.port
+                    for addr in addresses:
+                        results.append((addr, port))
+
+            def remove_service(self, zc: Zeroconf, type_: str, name: str) -> None:
+                pass
+
+            def update_service(self, zc: Zeroconf, type_: str, name: str) -> None:
+                pass
+
+        zc = Zeroconf()
+        try:
+            ServiceBrowser(zc, "_neuromap._tcp.local.", _Listener())
+            time.sleep(min(timeout, 3.0))
+        finally:
+            zc.close()
+
+        return results
 
     @staticmethod
     def _scan_serial_ports() -> list[str]:
