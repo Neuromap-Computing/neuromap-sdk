@@ -2,7 +2,6 @@
 
 import numpy as np
 import pytest
-
 from neuromap._internal.packing import pack_weights_nibble, unpack_weights_nibble
 
 
@@ -12,10 +11,7 @@ class TestPackUnpack:
     def test_round_trip_even(self) -> None:
         """Pack and unpack a 4x4 matrix (even number of elements)."""
         w = np.array(
-            [[ 1, -2,  3, -4],
-             [ 5, -6,  7, -7],
-             [ 0,  1, -1,  2],
-             [-3,  4, -5,  6]],
+            [[1, -2, 3, -4], [5, -6, 7, -7], [0, 1, -1, 2], [-3, 4, -5, 6]],
             dtype=np.int8,
         )
         packed = pack_weights_nibble(w)

@@ -1,7 +1,6 @@
 """Tests for CLI entry points."""
 
 import pytest
-
 from neuromap.cli import main
 
 

@@ -168,9 +168,7 @@ class Packet:
             ValueError: If payload exceeds :data:`MAX_PAYLOAD`.
         """
         if len(self.payload) > MAX_PAYLOAD:
-            raise ValueError(
-                f"Payload length {len(self.payload)} exceeds max {MAX_PAYLOAD}."
-            )
+            raise ValueError(f"Payload length {len(self.payload)} exceeds max {MAX_PAYLOAD}.")
         header = struct.pack(
             "<BBBBHH",
             SYNC_BYTE,
@@ -198,29 +196,20 @@ class Packet:
             ValueError: On sync mismatch, truncation, or CRC failure.
         """
         if len(data) < MIN_PACKET_SIZE:
-            raise ValueError(
-                f"Packet too short: {len(data)} < {MIN_PACKET_SIZE} bytes."
-            )
-        sync, version, cmd, flags, seq, payload_len = struct.unpack_from(
-            "<BBBBHH", data
-        )
+            raise ValueError(f"Packet too short: {len(data)} < {MIN_PACKET_SIZE} bytes.")
+        sync, version, cmd, flags, seq, payload_len = struct.unpack_from("<BBBBHH", data)
         if sync != SYNC_BYTE:
             raise ValueError(f"Bad sync byte: 0x{sync:02X} (expected 0xAA).")
         expected_len = HEADER_SIZE + payload_len + CRC_SIZE
         if len(data) < expected_len:
-            raise ValueError(
-                f"Packet truncated: have {len(data)}, need {expected_len}."
-            )
+            raise ValueError(f"Packet truncated: have {len(data)}, need {expected_len}.")
         payload = data[HEADER_SIZE : HEADER_SIZE + payload_len]
         body = data[: HEADER_SIZE + payload_len]
-        (crc_received,) = struct.unpack_from(
-            "<H", data, HEADER_SIZE + payload_len
-        )
+        (crc_received,) = struct.unpack_from("<H", data, HEADER_SIZE + payload_len)
         crc_computed = crc16_ccitt(body)
         if crc_received != crc_computed:
             raise ValueError(
-                f"CRC mismatch: received 0x{crc_received:04X}, "
-                f"computed 0x{crc_computed:04X}."
+                f"CRC mismatch: received 0x{crc_received:04X}, computed 0x{crc_computed:04X}."
             )
         return cls(cmd=Cmd(cmd), seq=seq, flags=flags, payload=bytes(payload))
 

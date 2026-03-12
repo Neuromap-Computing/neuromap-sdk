@@ -6,7 +6,6 @@ import tempfile
 from pathlib import Path
 
 import torch
-
 from neuromap import Network, chips
 
 

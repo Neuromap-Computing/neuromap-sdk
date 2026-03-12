@@ -21,7 +21,6 @@ from pathlib import Path
 from typing import Any
 
 import torch
-import torch.nn as nn
 
 from neuromap._internal.dynamic_snn import DynamicSNN
 from neuromap.chip import ChipSpec, NeuronParams

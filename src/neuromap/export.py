@@ -134,7 +134,7 @@ class Exporter:
             net = Network(chip, use_decoder=use_decoder)
 
             bits = manifest.get("weight_bits", chip.weight_bits)
-            qmax = 2 ** (bits - 1) - 1
+            _ = 2 ** (bits - 1) - 1  # qmax reserved for future dequant
 
             state_dict = net.model.state_dict()
             for name in list(state_dict.keys()):
@@ -181,17 +181,17 @@ class Exporter:
                     if "weight" in wname and arr.ndim == 2:
                         rows, cols = arr.shape
                         if rows == chip.layers[i + 1] and cols == chip.layers[i]:
-                            packed = pack_weights_nibble(
-                                arr.astype(np.int8), bits=bits
-                            )
+                            packed = pack_weights_nibble(arr.astype(np.int8), bits=bits)
                             hw_packed[f"hw/layer_{i}.bin"] = packed
-                            hw_layers.append({
-                                "index": i,
-                                "file": f"hw/layer_{i}.bin",
-                                "rows": rows,
-                                "cols": cols,
-                                "size_bytes": len(packed),
-                            })
+                            hw_layers.append(
+                                {
+                                    "index": i,
+                                    "file": f"hw/layer_{i}.bin",
+                                    "rows": rows,
+                                    "cols": cols,
+                                    "size_bytes": len(packed),
+                                }
+                            )
                             all_packed += packed
                             break
 
@@ -201,9 +201,7 @@ class Exporter:
                 "layers": hw_layers,
                 "total_weight_bytes": len(all_packed),
             }
-            manifest["deploy_checksum"] = (
-                "sha256:" + hashlib.sha256(all_packed).hexdigest()
-            )
+            manifest["deploy_checksum"] = "sha256:" + hashlib.sha256(all_packed).hexdigest()
 
         buf = io.BytesIO()
         with zipfile.ZipFile(buf, "w", compression=zipfile.ZIP_DEFLATED) as zf:

@@ -48,9 +48,7 @@ class DynamicSNN(nn.Module):
 
         self.snn_layers = nn.ModuleList()
         for i in range(len(layers) - 1):
-            self.snn_layers.append(
-                LIFLayer(layers[i], layers[i + 1], **self._neuron_kwargs)
-            )
+            self.snn_layers.append(LIFLayer(layers[i], layers[i + 1], **self._neuron_kwargs))
 
         self.decoder: nn.Linear | None = None
         if use_decoder:

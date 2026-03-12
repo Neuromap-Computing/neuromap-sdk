@@ -9,11 +9,10 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
-from scipy.io import wavfile
-
 from config import GammatoneFeatureConfig, ProsthesisDatasetConfig
 from features import extract_gammatone_features, save_feature_tensor
 from neuromap._internal.audio import load_audio_mono
+from scipy.io import wavfile
 
 
 def _discover_wavs(directory: Path) -> list[Path]:
@@ -240,7 +239,9 @@ def generate_prosthesis_dataset(
     config: ProsthesisDatasetConfig | dict[str, Any],
 ) -> dict[str, Any]:
     """Create deterministic train/val/test clean-noisy pairs and feature tensors."""
-    cfg = config if isinstance(config, ProsthesisDatasetConfig) else ProsthesisDatasetConfig(**config)
+    cfg = (
+        config if isinstance(config, ProsthesisDatasetConfig) else ProsthesisDatasetConfig(**config)
+    )
     rng = np.random.default_rng(cfg.seed)
 
     clean_paths_all = _discover_wavs(Path(clean_dir))
@@ -280,7 +281,11 @@ def generate_prosthesis_dataset(
         rng=rng,
     )
     snr_values = _snr_values(cfg)
-    feature_cfg = cfg.features if isinstance(cfg.features, GammatoneFeatureConfig) else GammatoneFeatureConfig(**cfg.features)
+    feature_cfg = (
+        cfg.features
+        if isinstance(cfg.features, GammatoneFeatureConfig)
+        else GammatoneFeatureConfig(**cfg.features)
+    )
 
     out_root = Path(out_dir)
     for split in ("train", "val", "test"):
@@ -288,7 +293,9 @@ def generate_prosthesis_dataset(
             (out_root / split / key).mkdir(parents=True, exist_ok=True)
 
     rows: list[dict[str, Any]] = []
-    for sample_idx, (clean_path, split) in enumerate(zip(clean_candidates, split_assignments, strict=True)):
+    for sample_idx, (clean_path, split) in enumerate(
+        zip(clean_candidates, split_assignments, strict=True)
+    ):
         noise_path = noise_paths[int(rng.integers(0, len(noise_paths)))]
         snr_db = float(rng.choice(snr_values))
         clean_audio = clean_audio_map[clean_path]
@@ -339,10 +346,23 @@ def generate_prosthesis_dataset(
         rows.append(row)
 
     manifest_columns = [
-        "sample_id", "split", "clean_path", "noisy_path", "feature_path",
-        "clean_source_path", "noise_source_path", "selected_snr_db",
-        "achieved_snr_db", "duration_seconds", "sample_rate", "clean_rms",
-        "noisy_rms", "clean_peak", "noisy_peak", "noise_type", "feature_shape",
+        "sample_id",
+        "split",
+        "clean_path",
+        "noisy_path",
+        "feature_path",
+        "clean_source_path",
+        "noise_source_path",
+        "selected_snr_db",
+        "achieved_snr_db",
+        "duration_seconds",
+        "sample_rate",
+        "clean_rms",
+        "noisy_rms",
+        "clean_peak",
+        "noisy_peak",
+        "noise_type",
+        "feature_shape",
     ]
     for split in ("train", "val", "test"):
         split_rows = [row for row in rows if row["split"] == split]

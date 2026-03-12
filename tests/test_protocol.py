@@ -1,7 +1,6 @@
 """Tests for NMP protocol: packet encoding/decoding, CRC, stream codec."""
 
 import pytest
-
 from neuromap.protocol import (
     CRC_SIZE,
     HEADER_SIZE,
@@ -88,7 +87,7 @@ class TestPacket:
     def test_truncated_packet(self) -> None:
         """Test truncated packet."""
         with pytest.raises(ValueError, match="too short"):
-            Packet.decode(b"\xAA\x01")
+            Packet.decode(b"\xaa\x01")
 
     def test_crc_corruption(self) -> None:
         """Test CRC corruption."""
@@ -136,7 +135,7 @@ class TestPacketCodec:
         assert packets[1].cmd == Cmd.PONG
 
     def test_partial_feed(self) -> None:
-        """ Test partial feed."""
+        """Test partial feed."""
         codec = PacketCodec()
         raw = Packet(cmd=Cmd.PING, seq=1).encode()
         # Feed first half, then second half

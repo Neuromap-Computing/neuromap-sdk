@@ -3,7 +3,6 @@
 import numpy as np
 import pytest
 import torch
-
 from neuromap import Board, BoardInfo, Exporter, Network, chips
 
 

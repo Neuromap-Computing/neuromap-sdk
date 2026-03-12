@@ -193,11 +193,7 @@ class chips:  # noqa: N801  – lowercase class name used as a namespace
     @classmethod
     def list(cls) -> list[str]:
         """Return names of all predefined chip profiles."""
-        return [
-            name
-            for name, val in vars(cls).items()
-            if isinstance(val, ChipSpec)
-        ]
+        return [name for name, val in vars(cls).items() if isinstance(val, ChipSpec)]
 
     @classmethod
     def get(cls, name: str) -> ChipSpec:

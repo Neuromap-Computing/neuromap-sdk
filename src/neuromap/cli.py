@@ -66,7 +66,9 @@ def main(argv: list[str] | None = None) -> None:
     p_inject = sub.add_parser("inject", help="Inject spikes from CLI")
     p_inject.add_argument("--port", default=None, help="Serial port")
     p_inject.add_argument("--mock", action="store_true", help="Use mock board")
-    p_inject.add_argument("--input", type=str, help="Comma-separated spike values (e.g. 1,0,1,0,...)")
+    p_inject.add_argument(
+        "--input", type=str, help="Comma-separated spike values (e.g. 1,0,1,0,...)"
+    )
     p_inject.add_argument("--file", type=str, help="Path to numpy .npy file with spikes")
     p_inject.add_argument("--output", type=str, default=None, help="Save output to .npy file")
 
@@ -99,7 +101,7 @@ def main(argv: list[str] | None = None) -> None:
 # ---------------------------------------------------------------------------
 
 
-def _get_board(args: argparse.Namespace) -> "Board":
+def _get_board(args: argparse.Namespace) -> "Board":  # noqa: F821
     from neuromap.board import Board
 
     if getattr(args, "mock", False):

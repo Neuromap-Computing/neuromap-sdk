@@ -9,11 +9,10 @@ from pathlib import Path
 
 import numpy as np
 import torch
-from torch.utils.data import Dataset
-
 from config import GammatoneFeatureConfig
 from features import extract_gammatone_features
 from neuromap._internal.audio import load_audio_mono
+from torch.utils.data import Dataset
 
 
 def read_manifest_rows(manifest_path: Path | str) -> list[dict[str, str]]:

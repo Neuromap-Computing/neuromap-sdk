@@ -18,14 +18,13 @@ from typing import Any
 import numpy as np
 import torch
 
-from neuromap._internal.packing import pack_weights_nibble, unpack_weights_nibble
+from neuromap._internal.packing import unpack_weights_nibble
 from neuromap.protocol import (
     Cmd,
     ErrorCode,
     Packet,
     PacketCodec,
 )
-
 
 # ---------------------------------------------------------------------------
 # Abstract Transport
@@ -91,9 +90,7 @@ class SerialTransport(Transport):
                 "pyserial is required for hardware board communication. "
                 "Install it with: pip install pyserial"
             ) from exc
-        self._serial = serial.Serial(
-            self._port, self._baudrate, timeout=0.1
-        )
+        self._serial = serial.Serial(self._port, self._baudrate, timeout=0.1)
 
     def close(self) -> None:
         if self._serial is not None and self._serial.is_open:
@@ -148,9 +145,7 @@ class TcpTransport(Transport):
         except OSError as exc:
             self._sock.close()
             self._sock = None
-            raise ConnectionError(
-                f"Cannot connect to {self._host}:{self._port}: {exc}"
-            ) from exc
+            raise ConnectionError(f"Cannot connect to {self._host}:{self._port}: {exc}") from exc
 
     def close(self) -> None:
         if self._sock is not None:
@@ -232,7 +227,9 @@ class MockFirmware:
                 "<IBBBBBBB",
                 0x00000001,  # board_id
                 0x01,  # hw_rev
-                1, 0, 0,  # fw version 1.0.0
+                1,
+                0,
+                0,  # fw version 1.0.0
                 0x01,  # protocol_version
                 0x01,  # chip_type (NEUROSOC_V1)
                 status,
@@ -242,7 +239,13 @@ class MockFirmware:
         if cmd == Cmd.GET_INFO:
             payload = struct.pack(
                 "<IBBBBBBB",
-                0x00000001, 0x01, 1, 0, 0, 0x01, 0x01,
+                0x00000001,
+                0x01,
+                1,
+                0,
+                0,
+                0x01,
+                0x01,
                 0x00 if not self._inferring else 0x01,
             )
             return [Packet(cmd=Cmd.INFO_RESP, seq=seq, payload=payload)]
@@ -255,9 +258,7 @@ class MockFirmware:
             weights = unpack_weights_nibble(packed_data, rows, cols, bits)
             layer = self._model.snn_layers[layer_idx]
             with torch.no_grad():
-                layer.fc.weight.copy_(
-                    torch.from_numpy(weights.astype(np.float32))
-                )
+                layer.fc.weight.copy_(torch.from_numpy(weights.astype(np.float32)))
             return [Packet(cmd=Cmd.WRITE_WEIGHTS_ACK, seq=seq)]
 
         if cmd == Cmd.WRITE_NEURON_PARAMS:

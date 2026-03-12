@@ -33,11 +33,9 @@ from neuromap._internal.transport import (
 )
 from neuromap.protocol import (
     Cmd,
-    ErrorCode,
     Packet,
     PacketCodec,
 )
-
 
 # ---------------------------------------------------------------------------
 # BoardInfo
@@ -268,7 +266,9 @@ class Board:
 
             w = weight_map[weight_key]
             rows, cols = w.shape
-            packed = pack_weights_nibble(w.astype(np.int8).reshape(rows, cols), bits=chip.weight_bits)
+            packed = pack_weights_nibble(
+                w.astype(np.int8).reshape(rows, cols), bits=chip.weight_bits
+            )
             payload = struct.pack("<BBHH", i, chip.weight_bits, rows, cols) + packed
             self._send_cmd(Cmd.WRITE_WEIGHTS, payload, expect=Cmd.WRITE_WEIGHTS_ACK)
 
@@ -340,9 +340,7 @@ class Board:
         resp = self._send_cmd(Cmd.INJECT_SPIKES, payload, expect=Cmd.OUTPUT_SPIKES)
         return np.frombuffer(resp.payload, dtype=np.float32)
 
-    def inject_batch(
-        self, spike_sequence: np.ndarray | torch.Tensor
-    ) -> np.ndarray:
+    def inject_batch(self, spike_sequence: np.ndarray | torch.Tensor) -> np.ndarray:
         """Inject multiple timesteps and return aggregated output.
 
         Args:
@@ -482,9 +480,12 @@ class Board:
         resp = responses[0]
         if resp.cmd == Cmd.ERROR:
             error_code = struct.unpack_from("<H", resp.payload)[0] if resp.payload else 0
-            msg = resp.payload[4:].decode("utf-8", errors="replace") if len(resp.payload) > 4 else ""
+            msg = (
+                resp.payload[4:].decode("utf-8", errors="replace") if len(resp.payload) > 4 else ""
+            )
             raise RuntimeError(
-                f"Board error 0x{error_code:04X}: {msg}" if msg
+                f"Board error 0x{error_code:04X}: {msg}"
+                if msg
                 else f"Board error 0x{error_code:04X}"
             )
 

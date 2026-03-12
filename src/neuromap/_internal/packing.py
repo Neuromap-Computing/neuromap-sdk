@@ -47,9 +47,7 @@ def pack_weights_nibble(weights: np.ndarray, bits: int = 4) -> bytes:
     return bytes(packed)
 
 
-def unpack_weights_nibble(
-    data: bytes, rows: int, cols: int, bits: int = 4
-) -> np.ndarray:
+def unpack_weights_nibble(data: bytes, rows: int, cols: int, bits: int = 4) -> np.ndarray:
     """Unpack nibble-packed bytes back to an int8 weight matrix.
 
     Args:
@@ -71,8 +69,7 @@ def unpack_weights_nibble(
     needed_bytes = (total + 1) // 2
     if len(data) < needed_bytes:
         raise ValueError(
-            f"Need at least {needed_bytes} bytes for {rows}x{cols} matrix, "
-            f"got {len(data)}."
+            f"Need at least {needed_bytes} bytes for {rows}x{cols} matrix, got {len(data)}."
         )
 
     flat = np.empty(total, dtype=np.int8)

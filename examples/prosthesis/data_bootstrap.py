@@ -22,7 +22,9 @@ def _copy_wavs(
     for file_path in sorted(source_files):
         if limit is not None and copied >= limit:
             break
-        target_name = file_path.name if filename_transform is None else filename_transform(file_path)
+        target_name = (
+            file_path.name if filename_transform is None else filename_transform(file_path)
+        )
         target_path = destination_dir / target_name
         if not target_path.exists():
             shutil.copy2(file_path, target_path)
@@ -125,7 +127,11 @@ def bootstrap_prosthesis_raw_data(
     config: ProsthesisBootstrapConfig | dict[str, Any],
 ) -> dict[str, Any]:
     """Download and stage clean/noise WAV sources for prosthesis generation."""
-    cfg = config if isinstance(config, ProsthesisBootstrapConfig) else ProsthesisBootstrapConfig(**config)
+    cfg = (
+        config
+        if isinstance(config, ProsthesisBootstrapConfig)
+        else ProsthesisBootstrapConfig(**config)
+    )
 
     raw_root = Path(cfg.raw_root)
     clean_out = raw_root / "clean_source"

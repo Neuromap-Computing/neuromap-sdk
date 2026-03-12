@@ -4,9 +4,8 @@ from __future__ import annotations
 
 import pytest
 import torch
-from torch.utils.data import DataLoader, TensorDataset
-
 from neuromap import Network, Trainer
+from torch.utils.data import DataLoader, TensorDataset
 
 
 def _make_loader(input_size: int, output_size: int, n: int = 20, time_steps: int = 5) -> DataLoader:
@@ -30,7 +29,11 @@ class TestTrainer:
         train_loader = _make_loader(16, 4, n=12)
         val_loader = _make_loader(16, 4, n=8)
         trainer = Trainer(
-            net, lr=1e-3, epochs=100, device="cpu", early_stop_patience=3,
+            net,
+            lr=1e-3,
+            epochs=100,
+            device="cpu",
+            early_stop_patience=3,
         )
         history = trainer.fit(train_loader, val_loader, verbose=False)
         assert len(history.epochs) <= 100

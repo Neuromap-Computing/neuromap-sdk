@@ -24,10 +24,6 @@ from pathlib import Path
 
 import numpy as np
 import torch
-from torch.utils.data import DataLoader
-
-from neuromap import Exporter, Network, Trainer, chips
-
 from config import (
     GammatoneFeatureConfig,
     ProsthesisBootstrapConfig,
@@ -38,6 +34,8 @@ from config import (
 from data_bootstrap import bootstrap_prosthesis_raw_data
 from data_generation import generate_prosthesis_dataset
 from dataset import ProsthesisDenoisingDataset, collate_batch, read_manifest_rows
+from neuromap import Exporter, Network, Trainer, chips
+from torch.utils.data import DataLoader
 
 
 def cmd_bootstrap(args: argparse.Namespace) -> None:
@@ -106,22 +104,40 @@ def cmd_train(args: argparse.Namespace) -> None:
     device = cfg.device or ("cuda" if torch.cuda.is_available() else "cpu")
 
     train_ds = ProsthesisDenoisingDataset(
-        train_rows, sample_rate=cfg.feature_sample_rate,
-        feature_config=feature_config, target_cache_size=cfg.target_cache_size,
+        train_rows,
+        sample_rate=cfg.feature_sample_rate,
+        feature_config=feature_config,
+        target_cache_size=cfg.target_cache_size,
     )
-    val_ds = ProsthesisDenoisingDataset(
-        val_rows, sample_rate=cfg.feature_sample_rate,
-        feature_config=feature_config, target_cache_size=cfg.target_cache_size,
-    ) if val_rows else None
+    val_ds = (
+        ProsthesisDenoisingDataset(
+            val_rows,
+            sample_rate=cfg.feature_sample_rate,
+            feature_config=feature_config,
+            target_cache_size=cfg.target_cache_size,
+        )
+        if val_rows
+        else None
+    )
 
     train_loader = DataLoader(
-        train_ds, batch_size=cfg.batch_size, shuffle=True,
-        num_workers=cfg.num_workers, collate_fn=collate_batch,
+        train_ds,
+        batch_size=cfg.batch_size,
+        shuffle=True,
+        num_workers=cfg.num_workers,
+        collate_fn=collate_batch,
     )
-    val_loader = DataLoader(
-        val_ds, batch_size=cfg.batch_size, shuffle=False,
-        num_workers=cfg.num_workers, collate_fn=collate_batch,
-    ) if val_ds is not None else None
+    val_loader = (
+        DataLoader(
+            val_ds,
+            batch_size=cfg.batch_size,
+            shuffle=False,
+            num_workers=cfg.num_workers,
+            collate_fn=collate_batch,
+        )
+        if val_ds is not None
+        else None
+    )
 
     def composite_loss(preds: torch.Tensor, targets: torch.Tensor) -> torch.Tensor:
         alpha = cfg.loss_alpha
@@ -154,7 +170,8 @@ def cmd_train(args: argparse.Namespace) -> None:
 
     history_path = output_dir / "training_history.json"
     history_path.write_text(
-        json.dumps({"history": history.to_list()}, indent=2), encoding="utf-8",
+        json.dumps({"history": history.to_list()}, indent=2),
+        encoding="utf-8",
     )
 
     print(f"Checkpoint saved to {checkpoint_path}")
@@ -214,8 +231,12 @@ def main() -> None:
     p_export.add_argument("--device", default="cpu")
 
     args = parser.parse_args()
-    {"bootstrap": cmd_bootstrap, "generate": cmd_generate,
-     "train": cmd_train, "export": cmd_export}[args.command](args)
+    {
+        "bootstrap": cmd_bootstrap,
+        "generate": cmd_generate,
+        "train": cmd_train,
+        "export": cmd_export,
+    }[args.command](args)
 
 
 if __name__ == "__main__":

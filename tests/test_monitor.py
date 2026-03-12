@@ -15,9 +15,7 @@ class TestSpikeEvent:
         assert event.event_type == "spike"
 
     def test_custom_event_type(self) -> None:
-        event = SpikeEvent(
-            timestamp_us=0, layer=1, neuron=2, event_type="membrane_cross"
-        )
+        event = SpikeEvent(timestamp_us=0, layer=1, neuron=2, event_type="membrane_cross")
         assert event.event_type == "membrane_cross"
 
 

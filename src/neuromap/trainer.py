@@ -161,11 +161,7 @@ class Trainer:
             if val_loader is not None:
                 val_loss = self._evaluate_loss(model, val_loader)
 
-            if (
-                self._sched is not None
-                and epoch > self.lr_warmup_epochs
-                and val_loss is not None
-            ):
+            if self._sched is not None and epoch > self.lr_warmup_epochs and val_loss is not None:
                 if self._scheduler_name == "plateau":
                     self._sched.step(val_loss)
                 else:
@@ -288,12 +284,8 @@ class Trainer:
 
     def _build_optimizer(self, model: nn.Module) -> torch.optim.Optimizer:
         if self._optimizer_name == "sgd":
-            return torch.optim.SGD(
-                model.parameters(), lr=self.lr, weight_decay=self.weight_decay
-            )
-        return torch.optim.Adam(
-            model.parameters(), lr=self.lr, weight_decay=self.weight_decay
-        )
+            return torch.optim.SGD(model.parameters(), lr=self.lr, weight_decay=self.weight_decay)
+        return torch.optim.Adam(model.parameters(), lr=self.lr, weight_decay=self.weight_decay)
 
     def _build_scheduler(self, optimizer: torch.optim.Optimizer) -> Any:
         if self._scheduler_name == "plateau":

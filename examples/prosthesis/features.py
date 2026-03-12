@@ -5,10 +5,9 @@ from __future__ import annotations
 from pathlib import Path
 
 import numpy as np
-from scipy.signal import gammatone, lfilter
-
 from config import GammatoneFeatureConfig
 from neuromap._internal.audio import frame_audio
+from scipy.signal import gammatone, lfilter
 
 
 def _erb_space(low_hz: float, high_hz: float, n_filters: int) -> np.ndarray:

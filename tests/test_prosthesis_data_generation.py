@@ -14,12 +14,15 @@ _EXAMPLES_DIR = Path(__file__).resolve().parent.parent / "examples" / "prosthesi
 if str(_EXAMPLES_DIR) not in sys.path:
     sys.path.insert(0, str(_EXAMPLES_DIR))
 
-from config import GammatoneFeatureConfig, ProsthesisDatasetConfig  # noqa: E402
-from data_generation import generate_prosthesis_dataset  # noqa: E402
-import data_generation  # noqa: E402
 import data_bootstrap  # noqa: E402
+import data_generation  # noqa: E402
+from config import (  # noqa: E402
+    GammatoneFeatureConfig,
+    ProsthesisBootstrapConfig,  # noqa: E402
+    ProsthesisDatasetConfig,
+)
 from data_bootstrap import bootstrap_prosthesis_raw_data  # noqa: E402
-from config import ProsthesisBootstrapConfig  # noqa: E402
+from data_generation import generate_prosthesis_dataset  # noqa: E402
 
 
 def _read_manifest(manifest_path: Path) -> list[dict[str, str]]:
@@ -53,7 +56,9 @@ def test_generate_prosthesis_dataset_deterministic(synthetic_audio_corpus: dict[
         val_ratio=0.25,
         seed=99,
         noise_metadata_csv=str(metadata_csv),
-        features=GammatoneFeatureConfig(sample_rate=16_000, n_filters=12, frame_size=128, hop_size=64),
+        features=GammatoneFeatureConfig(
+            sample_rate=16_000, n_filters=12, frame_size=128, hop_size=64
+        ),
     )
 
     result_a = generate_prosthesis_dataset(str(clean_dir), str(noise_dir), str(out_a), config=cfg)
@@ -63,7 +68,9 @@ def test_generate_prosthesis_dataset_deterministic(synthetic_audio_corpus: dict[
     assert _collect_selected_snrs(out_a) == _collect_selected_snrs(out_b)
 
 
-def test_generate_prosthesis_dataset_outputs_and_snr(synthetic_audio_corpus: dict[str, Path]) -> None:
+def test_generate_prosthesis_dataset_outputs_and_snr(
+    synthetic_audio_corpus: dict[str, Path],
+) -> None:
     clean_dir = synthetic_audio_corpus["clean_dir"]
     noise_dir = synthetic_audio_corpus["noise_dir"]
     out_dir = clean_dir.parent / "generated"
@@ -76,7 +83,9 @@ def test_generate_prosthesis_dataset_outputs_and_snr(synthetic_audio_corpus: dic
         train_ratio=0.5,
         val_ratio=0.25,
         seed=7,
-        features=GammatoneFeatureConfig(sample_rate=16_000, n_filters=10, frame_size=128, hop_size=64),
+        features=GammatoneFeatureConfig(
+            sample_rate=16_000, n_filters=10, frame_size=128, hop_size=64
+        ),
     )
 
     generate_prosthesis_dataset(str(clean_dir), str(noise_dir), str(out_dir), config=cfg)
@@ -150,7 +159,9 @@ def test_bootstrap_orchestration_with_monkeypatch(tmp_path: Path, monkeypatch) -
     assert Path(result["noise_dir"]).exists()
 
 
-def test_generate_skips_unreadable_noise(synthetic_audio_corpus: dict[str, Path], monkeypatch) -> None:
+def test_generate_skips_unreadable_noise(
+    synthetic_audio_corpus: dict[str, Path], monkeypatch
+) -> None:
     clean_dir = synthetic_audio_corpus["clean_dir"]
     noise_dir = synthetic_audio_corpus["noise_dir"]
     out_dir = clean_dir.parent / "generated_skip_bad_noise"
@@ -174,7 +185,9 @@ def test_generate_skips_unreadable_noise(synthetic_audio_corpus: dict[str, Path]
         train_ratio=0.5,
         val_ratio=0.25,
         seed=11,
-        features=GammatoneFeatureConfig(sample_rate=16_000, n_filters=8, frame_size=128, hop_size=64),
+        features=GammatoneFeatureConfig(
+            sample_rate=16_000, n_filters=8, frame_size=128, hop_size=64
+        ),
     )
 
     result = generate_prosthesis_dataset(str(clean_dir), str(noise_dir), str(out_dir), config=cfg)

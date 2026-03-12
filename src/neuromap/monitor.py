@@ -17,9 +17,8 @@ import struct
 import threading
 import time
 from collections.abc import Callable
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any
-
 
 # ---------------------------------------------------------------------------
 # SpikeEvent
@@ -147,9 +146,7 @@ class SpikeMonitor:
         ax.set_ylabel("Layer.Neuron")
         return fig
 
-    def firing_rate(
-        self, events: list[SpikeEvent] | None = None
-    ) -> dict[int, float]:
+    def firing_rate(self, events: list[SpikeEvent] | None = None) -> dict[int, float]:
         """Compute per-layer firing rates.
 
         Args:
@@ -175,10 +172,7 @@ class SpikeMonitor:
         if duration_s <= 0:
             return {layer: 0.0 for layer in layer_events}
 
-        return {
-            layer: len(evts) / duration_s
-            for layer, evts in layer_events.items()
-        }
+        return {layer: len(evts) / duration_s for layer, evts in layer_events.items()}
 
     def stop(self) -> None:
         """Stop monitoring and send MONITOR_STOP to the board."""
