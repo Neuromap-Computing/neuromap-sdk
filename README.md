@@ -8,10 +8,11 @@ Python SDK for programming Neuromap neuromorphic chips.
 pip install neuromap
 ```
 
-For development:
+For development (using Poetry):
 
 ```bash
-pip install -e ".[dev]"
+cd neuro-sim
+poetry install --with dev
 ```
 
 ## Quick Start
@@ -34,5 +35,18 @@ Exporter(net).quantize().save("model.nmap")
 ## Running Tests
 
 ```bash
-pytest tests/
+poetry run pytest tests/ -v
+```
+
+Or via Nx from the repo root:
+
+```bash
+npx nx run neuro-sim:test
+```
+
+## Linting & Formatting
+
+```bash
+poetry run ruff check .
+poetry run ruff format .
 ```

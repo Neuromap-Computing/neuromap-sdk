@@ -1,0 +1,42 @@
+{
+  "name": "neuro-sim",
+  "root": "neuro-sim",
+  "sourceRoot": "neuro-sim/src",
+  "projectType": "library",
+  "tags": ["lang:python", "type:sdk"],
+  "targets": {
+    "install": {
+      "executor": "nx:run-commands",
+      "options": { "command": "poetry install --with dev", "cwd": "neuro-sim" },
+      "cache": false
+    },
+    "build": {
+      "executor": "nx:run-commands",
+      "options": { "command": "poetry build", "cwd": "neuro-sim" },
+      "outputs": ["{projectRoot}/dist"]
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": { "command": "poetry run pytest tests/ -v", "cwd": "neuro-sim" }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": { "command": "poetry run ruff check .", "cwd": "neuro-sim" },
+      "inputs": ["default", "{workspaceRoot}/pyproject.toml"]
+    },
+    "format": {
+      "executor": "nx:run-commands",
+      "options": { "command": "poetry run ruff format .", "cwd": "neuro-sim" }
+    },
+    "format-check": {
+      "executor": "nx:run-commands",
+      "options": { "command": "poetry run ruff format --check .", "cwd": "neuro-sim" },
+      "inputs": ["default", "{workspaceRoot}/pyproject.toml"]
+    },
+    "serve-docs": {
+      "executor": "nx:run-commands",
+      "options": { "command": "poetry run mkdocs serve", "cwd": "neuro-sim" },
+      "cache": false
+    }
+  }
+}
