@@ -1270,6 +1270,18 @@ files = [
 ]
 
 [[package]]
+name = "snntorch"
+version = "0.9.4"
+description = "Deep learning with spiking neural networks."
+optional = false
+python-versions = ">=3.9"
+groups = ["main"]
+files = [
+    {file = "snntorch-0.9.4-py2.py3-none-any.whl", hash = "sha256:34805e8d9d3d50fa8d28eb8ee715d9196a4db115cefe497e026b3ce1b7884388"},
+    {file = "snntorch-0.9.4.tar.gz", hash = "sha256:eaa0dd46675c471bf0b616068ee777564377bcb46b2104840a4ff4332de01909"},
+]
+
+[[package]]
 name = "sympy"
 version = "1.14.0"
 description = "Computer algebra system (CAS) in Python"
@@ -1533,4 +1545,4 @@ ifaddr = ">=0.1.7"
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.10,<4.0"
-content-hash = "5f5ae545664461086499b1d15f0ebd0778cd2fbd93c067028e0fe389fa27633d"
+content-hash = "1db5a534763289536debb074910370fde8794e4334d2fbe3bec4e77d31c08751"
