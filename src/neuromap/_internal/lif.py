@@ -1,7 +1,8 @@
-"""Leaky integrate-and-fire layer implementation.
+"""Leaky integrate-and-fire layer backed by snnTorch.
 
-This module implements a dense LIF neuron layer that can carry state
-across sequential chunks, enabling streaming inference.
+This module implements :class:`NeuromapLIF`, a dense LIF neuron layer
+that wraps :class:`snntorch.Leaky` via composition, adding refractory
+period support and streaming state carry.
 """
 
 from __future__ import annotations
@@ -9,53 +10,96 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import Any
 
+import snntorch
 import torch
 import torch.nn as nn
 
-from neuromap._internal.spike import spike_function
+from neuromap._internal.spike import get_surrogate
 
 LIFState = dict[str, torch.Tensor | int]
 """Type alias for the per-layer neuron state dictionary."""
 
 
-class LIFLayer(nn.Module):
-    """A dense LIF layer with optional state carry-over across chunks.
+class NeuromapLIF(nn.Module):
+    """A dense LIF layer using snnTorch with refractory period support.
 
     Each neuron integrates weighted input current through a leaky
-    membrane potential and fires a spike when the membrane exceeds
-    a threshold.  A refractory period suppresses further firing for
-    a configurable number of time-steps after each spike.
+    membrane potential (via :class:`snntorch.Leaky`) and fires a spike
+    when the membrane exceeds a threshold.  A refractory period
+    suppresses further firing for a configurable number of time-steps
+    after each spike.
 
     Args:
         in_features: Number of input features (pre-synaptic neurons).
         out_features: Number of output neurons in this layer.
-        tau_m: Membrane time constant.
-        rm: Membrane resistance.
-        dt: Simulation time-step size.
-        v_th: Firing threshold voltage.
+        beta: Membrane potential decay rate (``1 - dt/tau_m``).
+        threshold: Firing threshold voltage.
         v_reset: Reset voltage after a spike.
         t_ref: Refractory period in time-steps.
+        spike_grad: Optional snnTorch surrogate gradient function.
+            Defaults to ``atan`` surrogate.
+        output_mem: If ``True``, output the pre-spike membrane potential
+            instead of binary spikes.  Useful as a continuous readout
+            for the output layer in regression tasks.
     """
 
     def __init__(
         self,
         in_features: int,
         out_features: int,
-        tau_m: float = 10.0,
-        rm: float = 1.0,
-        dt: float = 1.0,
-        v_th: float = 1.0,
+        beta: float = 0.9,
+        threshold: float = 1.0,
         v_reset: float = 0.0,
         t_ref: int = 2,
+        spike_grad: Any | None = None,
+        output_mem: bool = False,
     ) -> None:
         super().__init__()
         self.fc = nn.Linear(in_features, out_features)
-        self.tau_m = tau_m
-        self.rm = rm
-        self.dt = dt
-        self.v_th = v_th
-        self.v_reset = v_reset
         self.t_ref = t_ref
+        self.v_reset = v_reset
+        self.output_mem = output_mem
+
+        if spike_grad is None:
+            spike_grad = get_surrogate()
+
+        self.lif = snntorch.Leaky(
+            beta=beta,
+            threshold=threshold,
+            spike_grad=spike_grad,
+            init_hidden=False,
+            reset_mechanism="zero",
+        )
+
+    @classmethod
+    def from_neuron_params(
+        cls,
+        in_features: int,
+        out_features: int,
+        params: Any,
+        spike_grad: Any | None = None,
+    ) -> NeuromapLIF:
+        """Create a :class:`NeuromapLIF` from a :class:`NeuronParams`.
+
+        Args:
+            in_features: Number of input features.
+            out_features: Number of output neurons.
+            params: A :class:`~neuromap.chip.NeuronParams` instance.
+            spike_grad: Optional surrogate gradient function.
+
+        Returns:
+            A new :class:`NeuromapLIF` instance.
+        """
+        beta = 1.0 - params.dt / params.tau_m
+        return cls(
+            in_features=in_features,
+            out_features=out_features,
+            beta=beta,
+            threshold=params.v_th,
+            v_reset=params.v_reset,
+            t_ref=params.t_ref,
+            spike_grad=spike_grad,
+        )
 
     def init_state(self, batch_size: int, *, device: torch.device) -> LIFState:
         """Create a zero-initialised neuron state.
@@ -68,23 +112,29 @@ class LIFLayer(nn.Module):
             A state dictionary with membrane voltages, last spike times
             and step counter.
         """
-        v_mem = torch.full((batch_size, self.fc.out_features), self.v_reset, device=device)
+        mem = torch.full(
+            (batch_size, self.fc.out_features), self.v_reset, device=device
+        )
         last_spike_time = torch.full(
             (batch_size, self.fc.out_features), -float(self.t_ref), device=device
         )
-        return {"v_mem": v_mem, "last_spike_time": last_spike_time, "step": 0}
+        return {"mem": mem, "last_spike_time": last_spike_time, "step": 0}
 
     def _normalize_state(
         self, state: Mapping[str, Any], *, batch_size: int, device: torch.device
     ) -> LIFState:
-        if not {"v_mem", "last_spike_time", "step"}.issubset(state):
-            raise ValueError("State must contain 'v_mem', 'last_spike_time', and 'step'.")
-        v_mem = state["v_mem"].to(device)
+        # Accept both old "v_mem" key and new "mem" key
+        mem_key = "mem" if "mem" in state else "v_mem"
+        if not {mem_key, "last_spike_time", "step"}.issubset(state):
+            raise ValueError(
+                "State must contain 'mem' (or 'v_mem'), 'last_spike_time', and 'step'."
+            )
+        mem = state[mem_key].to(device)
         last_spike_time = state["last_spike_time"].to(device)
         step = int(state["step"])
-        if v_mem.shape[0] != batch_size:
+        if mem.shape[0] != batch_size:
             raise ValueError("State batch size does not match input batch size.")
-        return {"v_mem": v_mem, "last_spike_time": last_spike_time, "step": step}
+        return {"mem": mem, "last_spike_time": last_spike_time, "step": step}
 
     def forward(
         self,
@@ -111,29 +161,36 @@ class LIFLayer(nn.Module):
             if state is None
             else self._normalize_state(state, batch_size=batch_size, device=device)
         )
-        v_mem = current_state["v_mem"]
+        mem = current_state["mem"]
         last_spike_time = current_state["last_spike_time"]
         step = int(current_state["step"])
-        threshold = torch.as_tensor(self.v_th, device=device, dtype=x_seq.dtype)
         out_spikes: list[torch.Tensor] = []
 
         for t in range(time_steps):
             absolute_time = float(step + t)
             i_syn = self.fc(x_seq[:, t, :])
+
+            # Apply refractory mask
             refractory_mask = (absolute_time - last_spike_time) >= self.t_ref
-            dv = self.dt * (-(v_mem - self.v_reset) + self.rm * i_syn) / self.tau_m
-            v_mem = v_mem + dv * refractory_mask.float()
-            spike = spike_function(v_mem, threshold)
+            i_syn = i_syn * refractory_mask.float()
+
+            # Pre-spike membrane potential (leaky integration before reset)
+            pre_spike_mem = self.lif.beta * mem + i_syn
+
+            # snnTorch leaky neuron step
+            spike, mem = self.lif(i_syn, mem)
+
+            # Track spike times for refractory period
             time_tensor = torch.full_like(last_spike_time, absolute_time)
             last_spike_time = torch.where(spike > 0, time_tensor, last_spike_time)
-            v_mem = v_mem * (1.0 - spike) + self.v_reset * spike
-            out_spikes.append(spike)
+
+            out_spikes.append(pre_spike_mem if self.output_mem else spike)
 
         spikes = torch.stack(out_spikes, dim=1)
         if not return_state:
             return spikes
         next_state: LIFState = {
-            "v_mem": v_mem.detach(),
+            "mem": mem.detach(),
             "last_spike_time": last_spike_time.detach(),
             "step": step + time_steps,
         }

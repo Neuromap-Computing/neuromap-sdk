@@ -131,7 +131,8 @@ class Exporter:
             manifest = json.loads(zf.read("manifest.json"))
             chip = ChipSpec.from_dict(manifest["chip_spec"])
             use_decoder = manifest.get("use_decoder", True)
-            net = Network(chip, use_decoder=use_decoder)
+            membrane_readout = manifest.get("membrane_readout", False)
+            net = Network(chip, use_decoder=use_decoder, membrane_readout=membrane_readout)
 
             bits = manifest.get("weight_bits", chip.weight_bits)
             _ = 2 ** (bits - 1) - 1  # qmax reserved for future dequant
@@ -224,4 +225,5 @@ class Exporter:
             "weight_bits": self._bits or chip.weight_bits,
             "quantized": self._quantized,
             "use_decoder": self._network._use_decoder,
+            "membrane_readout": self._network._membrane_readout,
         }

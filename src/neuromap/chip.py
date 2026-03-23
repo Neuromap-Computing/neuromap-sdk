@@ -40,6 +40,25 @@ class NeuronParams:
     v_reset: float = 0.0
     t_ref: int = 2
 
+    @property
+    def beta(self) -> float:
+        """Membrane decay rate for snnTorch: ``1 - dt / tau_m``."""
+        return 1.0 - self.dt / self.tau_m
+
+    def to_snntorch_kwargs(self) -> dict[str, Any]:
+        """Return keyword arguments for :class:`NeuromapLIF`.
+
+        Returns:
+            Dictionary with ``beta``, ``threshold``, ``v_reset``, and
+            ``t_ref`` keys.
+        """
+        return {
+            "beta": self.beta,
+            "threshold": self.v_th,
+            "v_reset": self.v_reset,
+            "t_ref": self.t_ref,
+        }
+
     def to_dict(self) -> dict[str, Any]:
         """Serialise to a plain dictionary."""
         return {

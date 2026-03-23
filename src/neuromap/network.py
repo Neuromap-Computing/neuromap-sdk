@@ -37,12 +37,25 @@ class Network:
             will be used to construct the underlying SNN.
         use_decoder: Append a trainable linear decoder on the output
             layer.  Useful for continuous regression tasks.
+        membrane_readout: If ``True``, the last SNN layer outputs
+            continuous pre-spike membrane potentials instead of binary
+            spikes.  Essential for regression tasks (e.g. denoising)
+            where the network must produce continuous-valued output.
     """
 
-    def __init__(self, chip: ChipSpec, *, use_decoder: bool = True) -> None:
+    def __init__(
+        self,
+        chip: ChipSpec,
+        *,
+        use_decoder: bool = True,
+        membrane_readout: bool = False,
+    ) -> None:
         self._chip = chip
         self._use_decoder = use_decoder
-        self._model = self._build_model(chip, use_decoder=use_decoder)
+        self._membrane_readout = membrane_readout
+        self._model = self._build_model(
+            chip, use_decoder=use_decoder, membrane_readout=membrane_readout
+        )
 
     # -- alternative constructors -------------------------------------------------
 
@@ -55,6 +68,7 @@ class Network:
         neuron_params: Mapping[str, Any] | None = None,
         name: str = "custom",
         use_decoder: bool = True,
+        membrane_readout: bool = False,
     ) -> Network:
         """Build a :class:`Network` from an explicit layer topology.
 
@@ -67,6 +81,8 @@ class Network:
             neuron_params: Optional dict of LIF neuron parameters.
             name: Name for the synthetic chip spec.
             use_decoder: Whether to include the linear decoder.
+            membrane_readout: Use membrane potential readout on the
+                last layer.
 
         Returns:
             A new :class:`Network` instance.
@@ -82,7 +98,7 @@ class Network:
             weight_bits=weight_bits,
             neuron_params=np_obj,
         )
-        return cls(chip, use_decoder=use_decoder)
+        return cls(chip, use_decoder=use_decoder, membrane_readout=membrane_readout)
 
     # -- properties ---------------------------------------------------------------
 
@@ -198,6 +214,7 @@ class Network:
             f"  Total neurons : {self._chip.total_neurons}",
             f"  Total synapses: {self._chip.total_synapses}",
             f"  Decoder       : {'yes' if self._use_decoder else 'no'}",
+            f"  Mem. readout  : {'yes' if self._membrane_readout else 'no'}",
         ]
         total_params = sum(p.numel() for p in self._model.parameters())
         trainable = sum(p.numel() for p in self._model.parameters() if p.requires_grad)
@@ -248,6 +265,7 @@ class Network:
             {
                 "chip_spec": self._chip.to_dict(),
                 "use_decoder": self._use_decoder,
+                "membrane_readout": self._membrane_readout,
                 "model_state_dict": self._model.state_dict(),
             },
             path,
@@ -268,7 +286,8 @@ class Network:
         checkpoint = torch.load(path, map_location=device, weights_only=False)
         chip = ChipSpec.from_dict(checkpoint["chip_spec"])
         use_decoder = checkpoint.get("use_decoder", True)
-        net = cls(chip, use_decoder=use_decoder)
+        membrane_readout = checkpoint.get("membrane_readout", False)
+        net = cls(chip, use_decoder=use_decoder, membrane_readout=membrane_readout)
         net._model.load_state_dict(checkpoint["model_state_dict"])
         net.to(device)
         return net
@@ -276,12 +295,15 @@ class Network:
     # -- internal -----------------------------------------------------------------
 
     @staticmethod
-    def _build_model(chip: ChipSpec, *, use_decoder: bool) -> DynamicSNN:
-        neuron_kwargs = chip.neuron_params.to_dict()
+    def _build_model(
+        chip: ChipSpec, *, use_decoder: bool, membrane_readout: bool = False
+    ) -> DynamicSNN:
+        neuron_kwargs = chip.neuron_params.to_snntorch_kwargs()
         return DynamicSNN(
             layers=list(chip.layers),
             neuron_kwargs=neuron_kwargs,
             use_decoder=use_decoder,
+            membrane_readout=membrane_readout,
         )
 
     def __repr__(self) -> str:

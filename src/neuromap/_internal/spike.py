@@ -1,59 +1,47 @@
-"""Spike functions used by SNN layers.
+"""Surrogate gradient functions backed by snnTorch.
 
-Provides the surrogate gradient mechanism needed for backpropagation
-through the discontinuous Heaviside step function in spiking neurons.
+Provides a registry of surrogate gradient functions for backpropagation
+through the discontinuous spike function in spiking neurons.
 """
 
 from __future__ import annotations
 
+from typing import Callable
+
+import snntorch.surrogate as surrogate
 import torch
 
+_SURROGATES: dict[str, Callable[[], Callable[..., torch.Tensor]]] = {
+    "atan": surrogate.atan,
+    "fast_sigmoid": surrogate.fast_sigmoid,
+    "straight_through": surrogate.straight_through_estimator,
+    "spike_rate_escape": surrogate.spike_rate_escape,
+}
 
-class SurrogateHeaviside(torch.autograd.Function):
-    """Heaviside step function with a smooth surrogate gradient.
+DEFAULT_SURROGATE = "atan"
 
-    During the forward pass the function behaves as a hard threshold
-    (outputs 0 or 1).  During the backward pass it substitutes a
-    Gaussian-shaped surrogate gradient so that standard optimisers can
-    train the upstream weights.
+
+def get_surrogate(name: str | None = None) -> Callable[..., torch.Tensor]:
+    """Return an snnTorch surrogate gradient function by name.
+
+    Args:
+        name: One of ``"atan"``, ``"fast_sigmoid"``,
+            ``"straight_through"``, or ``"spike_rate_escape"``.
+            Defaults to ``"atan"``.
+
+    Returns:
+        A callable suitable for the ``spike_grad`` parameter of
+        snnTorch neuron models.
+
+    Raises:
+        ValueError: If *name* is not a recognised surrogate.
     """
-
-    @staticmethod
-    def forward(
-        ctx: torch.autograd.function.FunctionCtx,
-        input_tensor: torch.Tensor,
-        threshold: torch.Tensor,
-    ) -> torch.Tensor:
-        """Apply the Heaviside step.
-
-        Args:
-            ctx: Autograd context for saving tensors.
-            input_tensor: Membrane potentials.
-            threshold: Firing threshold.
-
-        Returns:
-            Binary spike tensor (1 where input >= threshold, else 0).
-        """
-        ctx.save_for_backward(input_tensor, threshold)
-        return (input_tensor >= threshold).float()
-
-    @staticmethod
-    def backward(
-        ctx: torch.autograd.function.FunctionCtx, grad_output: torch.Tensor
-    ) -> tuple[torch.Tensor, None]:
-        """Compute the surrogate gradient.
-
-        Args:
-            ctx: Autograd context with saved tensors.
-            grad_output: Upstream gradient.
-
-        Returns:
-            Tuple of (gradient w.r.t. input, ``None`` for threshold).
-        """
-        input_tensor, threshold = ctx.saved_tensors
-        surrogate_grad = torch.exp(-((input_tensor - threshold) ** 2))
-        return grad_output * surrogate_grad, None
+    name = name or DEFAULT_SURROGATE
+    factory = _SURROGATES.get(name)
+    if factory is None:
+        raise ValueError(f"Unknown surrogate '{name}'. Available: {list(_SURROGATES)}")
+    return factory()
 
 
-spike_function = SurrogateHeaviside.apply
-"""Convenience alias for :meth:`SurrogateHeaviside.apply`."""
+spike_function = get_surrogate(DEFAULT_SURROGATE)
+"""Default surrogate gradient function (atan) for internal use."""
