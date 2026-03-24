@@ -2,7 +2,11 @@
 
 from __future__ import annotations
 
+import tempfile
+from pathlib import Path
+
 import torch
+from neuromap import Network, chips
 from neuromap._internal.lif import NeuromapLIF
 from neuromap.chip import NeuronParams
 
@@ -95,10 +99,6 @@ class TestMembraneReadoutNetwork:
         assert len(torch.unique(y)) > 2
 
     def test_save_load_membrane_readout(self) -> None:
-        import tempfile
-        from pathlib import Path
-        from neuromap import Network, chips
-
         net = Network(chips.NEUROSOC_V1, membrane_readout=True)
         x = torch.rand(1, 5, 16)
         y_original = net.infer(x)

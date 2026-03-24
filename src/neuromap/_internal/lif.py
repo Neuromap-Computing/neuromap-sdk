@@ -112,9 +112,7 @@ class NeuromapLIF(nn.Module):
             A state dictionary with membrane voltages, last spike times
             and step counter.
         """
-        mem = torch.full(
-            (batch_size, self.fc.out_features), self.v_reset, device=device
-        )
+        mem = torch.full((batch_size, self.fc.out_features), self.v_reset, device=device)
         last_spike_time = torch.full(
             (batch_size, self.fc.out_features), -float(self.t_ref), device=device
         )

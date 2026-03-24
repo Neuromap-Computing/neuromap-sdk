@@ -27,9 +27,7 @@ def encode_rate(data: torch.Tensor, num_steps: int) -> torch.Tensor:
     return spikes.permute(1, 0, 2)
 
 
-def encode_latency(
-    data: torch.Tensor, num_steps: int, **kwargs: object
-) -> torch.Tensor:
+def encode_latency(data: torch.Tensor, num_steps: int, **kwargs: object) -> torch.Tensor:
     """Latency encoding via :func:`snntorch.spikegen.latency`.
 
     Args:

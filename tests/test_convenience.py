@@ -8,14 +8,12 @@ from pathlib import Path
 import torch
 from neuromap import Network, chips, compile_model, quantize_and_export_to_spi
 from neuromap._internal.lif import NeuromapLIF
-from neuromap._internal.spike import get_surrogate
 
 
 class TestCompileModel:
     def test_compile_changes_surrogate(self) -> None:
         net = Network(chips.NEUROSOC_V1)
         compile_model(net, surrogate="fast_sigmoid")
-        fast_sig = get_surrogate("fast_sigmoid")
         for module in net.model.modules():
             if isinstance(module, NeuromapLIF):
                 # Check the spike_grad was replaced
