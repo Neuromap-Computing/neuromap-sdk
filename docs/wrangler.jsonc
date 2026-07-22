@@ -1,0 +1,17 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "neuromap-docs",
+  "compatibility_date": "2025-03-01",
+  // Static-assets-only Worker: MkDocs builds a fully static site into ./site,
+  // so there is no worker script (`main`) to run — Cloudflare serves the files
+  // directly from the edge. (The website needs OpenNext only because it is a
+  // Next.js server app.)
+  "assets": {
+    "directory": "site",
+    // MkDocs uses directory URLs (quickstart/index.html), so map /quickstart
+    // and /quickstart/ to that file, and serve the generated 404.html on miss.
+    "html_handling": "auto-trailing-slash",
+    "not_found_handling": "404-page"
+  },
+  "routes": [{ "pattern": "docs.neuromap.ca", "custom_domain": true }]
+}

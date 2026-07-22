@@ -28,7 +28,7 @@ print(net.summary())
 trainer = Trainer(net, lr=1e-3, epochs=20)
 history = trainer.fit(train_loader, val_loader)
 
-# Export for deployment
+# Export a hardware bundle
 Exporter(net).quantize().save("model.nmap")
 ```
 
@@ -48,7 +48,7 @@ model = nm.Network(nm.chips.NEUROSOC_V1)
 # Configure surrogate gradients for training
 nm.compile_model(model, surrogate="atan")
 
-# Train, then quantize & export to hardware
+# Train, then quantize and export to a .nmap bundle
 nm.quantize_and_export_to_spi(model, path="model.nmap")
 ```
 
@@ -68,7 +68,7 @@ Or via Nx from the repo root:
 npx nx run neuro-sim:test
 ```
 
-## Linting & Formatting
+## Linting and Formatting
 
 ```bash
 poetry run ruff check .
@@ -100,7 +100,6 @@ Build and run spiking neural networks mapped to chip topology.
 | `infer` | `(x, *, state=None, return_state=False) -> Tensor\|tuple` | Rate-coded forward pass |
 | `infer_sequence` | `(x) -> Tensor` | Per-frame sequence inference |
 | `infer_stream` | `(x_chunk, state=None) -> (Tensor, state)` | Stateful streaming inference |
-| `deploy` | `(board, *, verify=True) -> None` | Quantize, export, and flash to board in one call |
 | `save` | `(path) -> None` | Save checkpoint to `.pt` file |
 | `load` *(cls)* | `(path, *, device="cpu") -> Network` | Load from `.pt` checkpoint |
 | `summary` | `() -> str` | Human-readable architecture summary |
@@ -132,40 +131,9 @@ High-level training driver with LR scheduling and early stopping.
 
 ---
 
-### `Board`
-
-Interface to a physical or mock Neuromap board.
-
-| Method | Signature | Description |
-|---|---|---|
-| `connect` *(cls)* | `(port=None, *, timeout=5.0) -> Board` | Auto-discover and connect to a board |
-| `list_boards` *(cls)* | `() -> list[BoardInfo]` | List all connected boards |
-| `mock` *(cls)* | `(chip=None) -> Board` | Create a software-simulated board |
-| `program` | `(nmap_path) -> None` | Flash a `.nmap` model to the board |
-| `verify` | `() -> bool` | Read back and verify flashed weights |
-| `start_inference` | `() -> None` | Start the inference clock |
-| `stop_inference` | `() -> None` | Stop the inference clock |
-| `inject` | `(spikes) -> np.ndarray` | Inject one timestep of input spikes, return output spikes |
-| `inject_batch` | `(spike_sequence) -> np.ndarray` | Inject multiple timesteps, return aggregated output |
-| `start_monitor` | `() -> SpikeMonitor` | Begin live spike monitoring |
-| `reset` | `() -> None` | Soft-reset the board |
-| `set_led` | `(led, state) -> None` | Control a user LED |
-| `close` | `() -> None` | Close the connection |
-| `info` *(prop)* | `-> BoardInfo\|None` | Board info from last handshake |
-| `is_connected` *(prop)* | `-> bool` | Whether transport is open |
-| `is_mock` *(prop)* | `-> bool` | Whether this is a mock board |
-
-`Board` supports context manager (`with Board.connect() as b:`).
-
-#### `BoardInfo` *(frozen dataclass)*
-
-Fields: `board_id`, `hw_revision`, `fw_version`, `protocol_version`, `chip_type`, `serial_port`, `status`.
-
----
-
 ### `Exporter`
 
-Export trained networks to `.nmap` hardware bundles.
+Export trained networks to `.nmap` bundles.
 
 | Method | Signature | Description |
 |---|---|---|
@@ -173,24 +141,10 @@ Export trained networks to `.nmap` hardware bundles.
 | `quantize` | `(bits=None) -> Exporter` | Apply post-training quantization (returns self for chaining) |
 | `to_weight_map` | `() -> dict[str, np.ndarray]` | Extract quantized weight arrays |
 | `save` | `(path) -> None` | Save `.nmap` bundle to disk |
-| `to_bytes` | `() -> bytes` | Export as in-memory bytes |
+| `to_bytes` | `() -> bytes` | Export the `.nmap` bundle as in-memory bytes |
 | `load_nmap` *(cls)* | `(path, *, device="cpu") -> Network` | Load `.nmap` and reconstruct a `Network` |
 
----
-
-### `SpikeMonitor`
-
-Live spike monitoring returned by `Board.start_monitor()`.
-
-| Method | Signature | Description |
-|---|---|---|
-| `on_spike` | `(callback) -> None` | Register callback `fn(SpikeEvent) -> None` |
-| `collect` | `(duration) -> list[SpikeEvent]` | Block and collect events for `duration` seconds |
-| `raster_plot` | `(events=None, *, layer=None, title=...) -> Figure` | Generate raster plot (matplotlib) |
-| `firing_rate` | `(events=None) -> dict[int, float]` | Per-layer firing rates (Hz) |
-| `stop` | `() -> None` | Stop monitoring |
-
-`SpikeMonitor` supports context manager. Each `SpikeEvent` has: `timestamp_us`, `layer`, `neuron`, `event_type`.
+A `.nmap` file is a ZIP archive with a `manifest.json` (chip spec, topology, quantization metadata) and per-layer weight arrays under `weights/`.
 
 ---
 
@@ -200,7 +154,7 @@ Predefined chip profiles.
 
 | | Description |
 |---|---|
-| `chips.NEUROSOC_V1` | NeuroSoC v1 — 48 LIF neurons, 512 4-bit synapses |
+| `chips.NEUROSOC_V1` | NeuroSoC v1: 48 LIF neurons, 512 4-bit synapses |
 | `chips.list()` | Return names of all predefined profiles |
 | `chips.get(name)` | Look up a profile by name |
 
@@ -230,24 +184,11 @@ LIF neuron parameters used to configure a `ChipSpec`.
 
 ---
 
-### CLI (`neuromap` command)
-
-```
-neuromap info    [--port PORT]          Show board info
-neuromap flash   MODEL.nmap [--port]   Deploy model to board
-neuromap monitor [--port] [--duration] Live spike monitoring
-neuromap inject  SPIKES.npy [--port]   Inject spikes from file
-neuromap reset   [--port]              Soft-reset board
-neuromap test    [--port]              Board self-test
-```
-
----
-
 ## Internal / Advanced API
 
-These are not part of the stable public API but can be useful for advanced use cases, custom transports, or protocol-level work.
+These are not part of the stable public API but can be useful for advanced use cases.
 
-### `_internal.lif.NeuromapLIF` — raw LIF layer (nn.Module)
+### `_internal.lif.NeuromapLIF`: raw LIF layer (nn.Module)
 
 ```python
 from neuromap._internal.lif import NeuromapLIF
@@ -258,7 +199,7 @@ spikes, state = layer(x_seq, state=None, return_state=True)
 # also: layer.init_state(batch_size, device=device)
 ```
 
-### `_internal.dynamic_snn.DynamicSNN` — raw multi-layer SNN (nn.Module)
+### `_internal.dynamic_snn.DynamicSNN`: raw multi-layer SNN (nn.Module)
 
 ```python
 from neuromap._internal.dynamic_snn import DynamicSNN
@@ -268,7 +209,7 @@ out = snn.forward_sequence(x)       # per-frame
 out, state = snn(x, return_state=True)
 ```
 
-### `_internal.encoding` — raw spike encoders
+### `_internal.encoding`: raw spike encoders
 
 ```python
 from neuromap._internal.encoding import encode_rate, encode_latency, encode_delta
@@ -277,7 +218,7 @@ spikes = encode_latency(data, num_steps=100)
 spikes = encode_delta(data)
 ```
 
-### `_internal.quantization` — weight quantization
+### `_internal.quantization`: weight quantization
 
 ```python
 from neuromap._internal.quantization import quantize_model_weights, quantize_weights_4bit
@@ -285,47 +226,17 @@ model = quantize_model_weights(model, bits=4)
 model = quantize_weights_4bit(model)   # convenience alias
 ```
 
-### `_internal.packing` — nibble packing
-
-```python
-from neuromap._internal.packing import pack_weights_nibble, unpack_weights_nibble
-raw = pack_weights_nibble(weights_int8, bits=4)
-w   = unpack_weights_nibble(raw, rows=R, cols=C, bits=4)
-```
-
-### `_internal.transport` — custom transports
-
-```python
-from neuromap._internal.transport import SerialTransport, TcpTransport, MockTransport, MockFirmware
-t = SerialTransport("/dev/ttyUSB0", baudrate=115200)
-t = TcpTransport("192.168.1.10", port=4840)
-fw = MockFirmware(chip=chips.NEUROSOC_V1)
-t  = MockTransport(fw)
-```
-All transports implement `open()`, `close()`, `write(data)`, `read(size, timeout_ms)`, `is_open`.
-
-### `_internal.spike` — surrogate gradients
+### `_internal.spike`: surrogate gradients
 
 ```python
 from neuromap._internal.spike import get_surrogate
 grad_fn = get_surrogate("atan")   # "fast_sigmoid", "straight_through", "spike_rate_escape"
 ```
 
-### `_internal.audio` — audio preprocessing
+### `_internal.audio`: audio preprocessing
 
 ```python
 from neuromap._internal.audio import load_audio_mono, frame_audio
 audio, sr = load_audio_mono("clip.wav", target_sample_rate=16000)
 frames     = frame_audio(audio, frame_size=256, hop_size=128)
-```
-
-### `protocol` — wire protocol primitives
-
-```python
-from neuromap.protocol import Packet, PacketCodec, Cmd, ErrorCode, crc16_ccitt
-pkt   = Packet(cmd=Cmd.PING, seq=0, flags=0, payload=b"")
-raw   = pkt.encode()
-pkt2  = Packet.decode(raw)
-codec = PacketCodec()
-pkts  = codec.feed(stream_bytes)   # returns list[Packet] as frames arrive
 ```

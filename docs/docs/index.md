@@ -3,38 +3,51 @@
 **Program neuromorphic chips with Python.**
 
 Neuromap is a Python SDK for building, training, quantizing, and
-exporting spiking neural networks (SNNs) that run on Neuromap
-neuromorphic hardware.
+exporting spiking neural networks (SNNs) for Neuromap neuromorphic
+hardware. It gives you a PyTorch-based workflow that goes from an
+untrained model to a portable `.nmap` hardware bundle.
 
-## Features
+## Why Neuromap
 
-- **Chip-aware networks** — define networks that match your target
-  chip's topology and neuron parameters.
-- **Built-in training loop** — gradient clipping, LR warmup, early
-  stopping, and checkpointing out of the box.
-- **Hardware export** — quantize weights to match DAC bit-widths and
-  package into `.nmap` archives.
-- **Streaming inference** — stateful chunk-by-chunk processing for
+- **Chip-aware networks.** Define networks that match your target
+  chip's topology, weight bit-width, and neuron parameters, so what you
+  train is what you export.
+- **Batteries-included training.** A single `Trainer` class handles LR
+  warmup, scheduling, gradient clipping, early stopping, and best-model
+  checkpointing.
+- **Hardware export.** Quantize weights to the chip's DAC bit-width and
+  package everything into a portable `.nmap` archive.
+- **Streaming inference.** Stateful chunk-by-chunk processing for
   real-time applications.
 
-## Quick install
+## Install
 
 ```bash
 pip install neuromap
 ```
 
-## Minimal example
+## The pipeline in one screen
 
 ```python
 from neuromap import Network, Trainer, Exporter, chips
 
-# Build a network matching the NeuroSoC-v1 chip
+# 1. Build a network matching the NeuroSoC-v1 chip
 net = Network(chips.NEUROSOC_V1)
+print(net.summary())
 
-# Train (assuming you have a DataLoader)
+# 2. Train it (bring your own DataLoader)
 trainer = Trainer(net, lr=1e-3, epochs=20)
 history = trainer.fit(train_loader, val_loader)
 
-# Export for deployment
+# 3. Export a hardware bundle
 Exporter(net).quantize().save("model.nmap")
 ```
+
+## Where to go next
+
+- [Quickstart](quickstart.md) walks through the same pipeline step by
+  step, with runnable snippets.
+- [Concepts](concepts.md) explains the four-stage model behind the SDK:
+  chip spec, network, trainer, and exporter.
+- [API Reference](api/network.md) is the full class-by-class reference,
+  generated from the source docstrings.

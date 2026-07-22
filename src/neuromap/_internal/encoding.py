@@ -11,12 +11,12 @@ import torch
 
 
 def _scale_to_unit_interval(data: torch.Tensor) -> torch.Tensor:
-    """Min–max scale to ``[0, 1]`` per feature when values lie outside that range.
+    """Min-max scale to ``[0, 1]`` per feature when values lie outside that range.
 
     snnTorch ``rate`` / ``latency`` require inputs in ``[0, 1]``.  Data that is
     already in range (e.g. pre-normalised sensors) is returned unchanged.
     Leading dimensions are reduced so each column (last dim) is scaled using
-    its own min/max — e.g. ``(time, features)`` normalises over time per channel.
+    its own min/max - e.g. ``(time, features)`` normalises over time per channel.
     """
     if data.numel() == 0:
         return data

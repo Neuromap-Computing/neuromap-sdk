@@ -1,7 +1,7 @@
 """Chip hardware profile definitions for Neuromap neuromorphic processors.
 
-This module defines :class:`ChipSpec` — the specification of a physical
-neuromorphic chip — and :class:`NeuronParams` — the default LIF neuron
+This module defines :class:`ChipSpec` - the specification of a physical
+neuromorphic chip - and :class:`NeuronParams` - the default LIF neuron
 parameters baked into the hardware.  The :class:`chips` namespace
 provides pre-defined profiles for every Neuromap chip revision.
 
@@ -188,7 +188,7 @@ class ChipSpec:
         )
 
 
-class chips:  # noqa: N801  – lowercase class name used as a namespace
+class chips:  # noqa: N801  - lowercase class name used as a namespace
     """Registry of predefined chip profiles."""
 
     NEUROSOC_V1 = ChipSpec(
@@ -207,7 +207,7 @@ class chips:  # noqa: N801  – lowercase class name used as a namespace
         supply_voltage_mv=250,
         energy_per_spike_fj=1.61,
     )
-    """NeuroSoC v1 — 48 LIF neurons, 512 4-bit synapses, 28 nm CMOS ASIC."""
+    """NeuroSoC v1 - 48 LIF neurons, 512 4-bit synapses, 28 nm CMOS ASIC."""
 
     @classmethod
     def list(cls) -> list[str]:

@@ -1,6 +1,6 @@
-# Neuromap Dev Board — SDK Extension & Hardware Requirements Plan
+# Neuromap Dev Board - SDK Extension & Hardware Requirements Plan
 
-> **Status**: Draft — ASIC taped out, awaiting fabrication
+> **Status**: Draft - ASIC taped out, awaiting fabrication
 > **Last updated**: 2026-03-10
 
 ## Context
@@ -10,12 +10,12 @@ The NeuroSoC-v1 ASIC is taped out and awaiting fabrication. This document plans:
 2. The **SDK extensions** to deploy trained models and interact with the board
 3. The **firmware protocol** between the host Python SDK and the MCU companion
 
-The goal: "democratize neuromorphic computing like Arduino did for electronics" — plug-and-play USB board with a one-liner deploy experience, powerful enough for researchers.
+The goal: "democratize neuromorphic computing like Arduino did for electronics" - plug-and-play USB board with a one-liner deploy experience, powerful enough for researchers.
 
 ### Key Decisions
 
-- **Host link**: USB (CDC virtual serial port — driverless)
-- **Board arch**: MCU companion (not decided which — design MCU-agnostic)
+- **Host link**: USB (CDC virtual serial port - driverless)
+- **Board arch**: MCU companion (not decided which - design MCU-agnostic)
 - **ASIC interface**: SPI registers, abstracted behind MCU firmware
 - **Training**: Host-only (PyTorch on PC), chip for inference only
 - **I/O**: Wide variety for maximum flexibility
@@ -54,7 +54,7 @@ The goal: "democratize neuromorphic computing like Arduino did for electronics" 
 
 ### 1.3 On-Board Extras
 
-- **IMU** (e.g. LSM6DS3) on I2C — optional populate (DNP for cost-reduced variant)
+- **IMU** (e.g. LSM6DS3) on I2C - optional populate (DNP for cost-reduced variant)
 - **Reset button + user button** (wired to MCU GPIO)
 - **Power LED** (green), **Activity LED** (blue, MCU-controlled), **Spike LED** (amber)
 - **SWD/JTAG debug header** (1.27mm Tag-Connect) for firmware development
@@ -84,11 +84,11 @@ Host PC                    Dev Board
 
 ---
 
-## 2. Firmware Protocol (NMP — Neuromap Protocol)
+## 2. Firmware Protocol (NMP - Neuromap Protocol)
 
 ### 2.1 Transport
 
-- USB CDC/ACM (virtual serial port) — driverless on Windows 10+, macOS, Linux
+- USB CDC/ACM (virtual serial port) - driverless on Windows 10+, macOS, Linux
 - Binary packet protocol over the byte stream
 
 ### 2.2 Packet Format
@@ -113,13 +113,13 @@ Offset  Size  Field         Description
 ```
 CMD   Name                  Dir          Description
 ---   ----                  ---          -----------
-— Discovery —
+- Discovery -
 0x01  PING                  Host→Dev     Board identification request
 0x02  PONG                  Dev→Host     Board ID, HW rev, FW version, chip type, status
 0x03  GET_INFO              Host→Dev     Detailed board info query
 0x04  INFO_RESP             Dev→Host     Full board info payload
 
-— Programming —
+- Programming -
 0x10  WRITE_WEIGHTS         Host→Dev     Write weight matrix for one layer
 0x11  WRITE_WEIGHTS_ACK     Dev→Host     Acknowledge
 0x12  WRITE_NEURON_PARAMS   Host→Dev     Write LIF parameters (per-layer or global)
@@ -131,7 +131,7 @@ CMD   Name                  Dir          Description
 0x18  DEPLOY_COMPLETE       Host→Dev     All programming done
 0x19  DEPLOY_COMPLETE_ACK   Dev→Host     Chip ready for inference
 
-— Inference —
+- Inference -
 0x20  INFER_START           Host→Dev     Start inference clock
 0x21  INFER_START_ACK       Dev→Host     Running
 0x22  INFER_STOP            Host→Dev     Stop inference clock
@@ -141,7 +141,7 @@ CMD   Name                  Dir          Description
 0x26  INJECT_BATCH          Host→Dev     Inject multiple timesteps
 0x27  OUTPUT_BATCH          Dev→Host     Batch output
 
-— Monitoring —
+- Monitoring -
 0x30  MONITOR_START         Host→Dev     Begin live spike streaming
 0x31  MONITOR_START_ACK     Dev→Host     Streaming active
 0x32  MONITOR_STOP          Host→Dev     Stop streaming
@@ -149,7 +149,7 @@ CMD   Name                  Dir          Description
 0x34  SPIKE_EVENT           Dev→Host     Single spike event (layer, neuron, timestamp)
 0x35  STATE_SNAPSHOT        Dev→Host     Full membrane state readback
 
-— System —
+- System -
 0x40  RESET                 Host→Dev     Soft-reset board
 0x41  RESET_ACK             Dev→Host     Reset done
 0x42  SET_LED               Host→Dev     Control user LEDs
@@ -157,7 +157,7 @@ CMD   Name                  Dir          Description
 0x44  BOOTLOADER            Host→Dev     Enter DFU mode
 0x45  BOOTLOADER_ACK        Dev→Host     Entering bootloader
 
-— Reserved —
+- Reserved -
 0xF0  MULTI_BOARD_SYNC      Host→Dev     Future multi-board clock sync
 0xF1  RAW_SPI               Host→Dev     SPI pass-through (power-user escape hatch)
 0xF2  RAW_SPI_RESP          Dev→Host     SPI response
@@ -227,17 +227,17 @@ src/neuromap/
     network.py               # Add: deploy() method
     trainer.py               # Unchanged
     export.py                # Add: to_bytes(), nmap-v2 manifest with hw/ dir
-    board.py                 # NEW — Board connection, discovery, deploy, inference
-    protocol.py              # NEW — Packet encode/decode, CRC, command enums
-    monitor.py               # NEW — SpikeMonitor, raster plot, firing rates
-    cli.py                   # NEW — CLI entry points
+    board.py                 # NEW - Board connection, discovery, deploy, inference
+    protocol.py              # NEW - Packet encode/decode, CRC, command enums
+    monitor.py               # NEW - SpikeMonitor, raster plot, firing rates
+    cli.py                   # NEW - CLI entry points
     _internal/
-        transport.py         # NEW — Transport ABC, SerialTransport, MockTransport, MockFirmware
-        packing.py           # NEW — Weight nibble packing/unpacking
+        transport.py         # NEW - Transport ABC, SerialTransport, MockTransport, MockFirmware
+        packing.py           # NEW - Weight nibble packing/unpacking
         (existing files unchanged)
 ```
 
-### 3.2 `protocol.py` — Packet Codec
+### 3.2 `protocol.py` - Packet Codec
 
 ```python
 SYNC_BYTE = 0xAA
@@ -262,11 +262,11 @@ class Packet:
     def decode(cls, data: bytes) -> Packet: ...
 
 class PacketCodec:
-    """Stateful stream decoder — feed raw bytes, get complete packets."""
+    """Stateful stream decoder - feed raw bytes, get complete packets."""
     def feed(self, data: bytes) -> list[Packet]: ...
 ```
 
-### 3.3 `_internal/transport.py` — Abstraction Layer
+### 3.3 `_internal/transport.py` - Abstraction Layer
 
 ```python
 class Transport(ABC):
@@ -295,7 +295,7 @@ class MockFirmware:
     def process_packet(self, packet: Packet) -> list[Packet]: ...
 ```
 
-### 3.4 `_internal/packing.py` — Weight Packing
+### 3.4 `_internal/packing.py` - Weight Packing
 
 ```python
 def pack_weights_nibble(weights: np.ndarray, bits: int = 4) -> bytes:
@@ -305,7 +305,7 @@ def unpack_weights_nibble(data: bytes, rows: int, cols: int, bits: int = 4) -> n
     """Unpack nibble bytes back to int8 matrix."""
 ```
 
-### 3.5 `board.py` — Board API
+### 3.5 `board.py` - Board API
 
 ```python
 @dataclass(frozen=True)
@@ -363,7 +363,7 @@ class Board:
     def __exit__(self, *exc) -> None: ...
 ```
 
-### 3.6 `network.py` — Add `deploy()` Method
+### 3.6 `network.py` - Add `deploy()` Method
 
 ```python
 def deploy(self, board: Board, *, verify: bool = True) -> None:
@@ -379,7 +379,7 @@ def deploy(self, board: Board, *, verify: bool = True) -> None:
     # 4. Optionally verify weights on-chip
 ```
 
-### 3.7 `export.py` — `.nmap` v2 & `to_bytes()`
+### 3.7 `export.py` - `.nmap` v2 & `to_bytes()`
 
 Add `to_bytes()` for in-memory export (used by `deploy()`). Evolve manifest to v2:
 
@@ -402,9 +402,9 @@ Add `to_bytes()` for in-memory export (used by `deploy()`). Evolve manifest to v
 }
 ```
 
-ZIP gains `hw/` directory with pre-packed binaries alongside existing `weights/` (backward compatible — `load_nmap()` still uses `weights/`).
+ZIP gains `hw/` directory with pre-packed binaries alongside existing `weights/` (backward compatible - `load_nmap()` still uses `weights/`).
 
-### 3.8 `monitor.py` — Live Spike Monitoring
+### 3.8 `monitor.py` - Live Spike Monitoring
 
 ```python
 @dataclass
@@ -430,7 +430,7 @@ class SpikeMonitor:
 
 Background thread reads SPIKE_EVENT packets, dispatches to callbacks or internal buffer.
 
-### 3.9 `cli.py` — CLI Commands
+### 3.9 `cli.py` - CLI Commands
 
 Registered via `[project.scripts] neuromap = "neuromap.cli:main"` in pyproject.toml.
 
@@ -461,7 +461,7 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["pytest>=7.0", "scipy"]
-monitor = ["matplotlib>=3.5"]  # NEW — for raster plots
+monitor = ["matplotlib>=3.5"]  # NEW - for raster plots
 
 [project.scripts]
 neuromap = "neuromap.cli:main"  # NEW
@@ -471,7 +471,7 @@ neuromap = "neuromap.cli:main"  # NEW
 
 ## 4. End-to-End User Workflows
 
-### Beginner — "Arduino Experience"
+### Beginner - "Arduino Experience"
 
 ```python
 from neuromap import Network, Trainer, Board, chips
@@ -486,7 +486,7 @@ net.deploy(board)            # quantize + flash + verify
 output = board.inject(input_spikes)
 ```
 
-### Power User — Explicit Pipeline
+### Power User - Explicit Pipeline
 
 ```python
 from neuromap import Network, Exporter, Board
@@ -529,14 +529,14 @@ output = board.inject(spikes) # runs DynamicSNN internally
 
 ### Phase 1: Protocol & Transport (no hardware needed)
 
-- `_internal/packing.py` — weight nibble packing/unpacking
-- `protocol.py` — packet encode/decode, CRC-16/CCITT, Cmd enum
-- `_internal/transport.py` — Transport ABC, MockTransport, MockFirmware
+- `_internal/packing.py` - weight nibble packing/unpacking
+- `protocol.py` - packet encode/decode, CRC-16/CCITT, Cmd enum
+- `_internal/transport.py` - Transport ABC, MockTransport, MockFirmware
 - Tests for all
 
 ### Phase 2: Board API & Mock Backend
 
-- `board.py` — Board class with full API, working via MockTransport
+- `board.py` - Board class with full API, working via MockTransport
 - Add `deploy()` to `network.py`
 - Update `export.py` with `to_bytes()` and nmap-v2 manifest
 - Tests for Board + mock workflows
@@ -549,8 +549,8 @@ output = board.inject(spikes) # runs DynamicSNN internally
 
 ### Phase 4: Monitoring & CLI
 
-- `monitor.py` — SpikeMonitor, background thread, raster plots
-- `cli.py` — all subcommands
+- `monitor.py` - SpikeMonitor, background thread, raster plots
+- `cli.py` - all subcommands
 - Update pyproject.toml `[project.scripts]`
 
 ### Phase 5: Polish
@@ -596,9 +596,9 @@ output = board.inject(spikes) # runs DynamicSNN internally
 ## 8. Verification Criteria
 
 1. `pip install -e ".[dev]"` installs with pyserial
-2. `python -c "from neuromap import Board; b = Board.mock(); print(b.info)"` — mock board works
+2. `python -c "from neuromap import Board; b = Board.mock(); print(b.info)"` - mock board works
 3. Mock end-to-end: `net.deploy(Board.mock())` → `board.inject()` returns spikes
-4. `pytest tests/` — all new + existing tests pass
+4. `pytest tests/` - all new + existing tests pass
 5. `neuromap info` (with mock) shows board info
 6. `neuromap flash model.nmap` (with mock) succeeds
 7. `neuromap monitor --duration 2` (with mock) captures events
@@ -607,9 +607,9 @@ output = board.inject(spikes) # runs DynamicSNN internally
 
 ## 9. Design Rationale
 
-- **USB CDC** — appears as serial port on all OSes without drivers; pyserial is mature; serial monitors can debug raw protocol
-- **Binary protocol** — essential for future larger chips; CRC for integrity; 10-byte overhead is minimal
-- **MockFirmware uses DynamicSNN** — numerically identical to Network.infer(), full CI/CD testing without hardware
-- **CRC-16 over CRC-32** — sufficient for packets <4KB, saves 2 bytes; upgradeable in future protocol version
-- **pyserial as core dep** — lightweight (~100KB), no native compilation, cross-platform
-- **matplotlib as optional dep** — only needed for raster plots, not for core board operation
+- **USB CDC** - appears as serial port on all OSes without drivers; pyserial is mature; serial monitors can debug raw protocol
+- **Binary protocol** - essential for future larger chips; CRC for integrity; 10-byte overhead is minimal
+- **MockFirmware uses DynamicSNN** - numerically identical to Network.infer(), full CI/CD testing without hardware
+- **CRC-16 over CRC-32** - sufficient for packets <4KB, saves 2 bytes; upgradeable in future protocol version
+- **pyserial as core dep** - lightweight (~100KB), no native compilation, cross-platform
+- **matplotlib as optional dep** - only needed for raster plots, not for core board operation

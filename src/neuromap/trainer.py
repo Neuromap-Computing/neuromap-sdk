@@ -71,7 +71,7 @@ class Trainer:
 
     def __init__(
         self,
-        network: Any,  # avoid circular import – typed as Network at runtime
+        network: Any,  # avoid circular import - typed as Network at runtime
         *,
         lr: float = 3e-4,
         epochs: int = 40,

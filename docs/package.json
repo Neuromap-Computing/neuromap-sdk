@@ -1,0 +1,11 @@
+{
+  "name": "neuromap-docs",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build": "pip install --break-system-packages -r requirements-docs.txt && pip install --break-system-packages -e .. && python -m mkdocs build",
+    "serve": "python -m mkdocs serve",
+    "deploy": "npm run build && wrangler deploy",
+    "deploy:only": "wrangler deploy"
+  }
+}
