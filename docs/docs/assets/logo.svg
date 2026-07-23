@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Neuromap">
+  <!-- Icon-only mark, matching the website's spaced NeuromapIcon variant.
+       Colors are hardcoded (not CSS vars) since this SVG is served standalone
+       by MkDocs, outside the website's Tailwind theme. -->
+  <rect x="0"  y="0"  width="26" height="14" fill="#4A7C6F"/>
+  <rect x="26" y="0"  width="38" height="14" fill="#2D3D57"/>
+  <rect x="0"  y="25" width="45" height="14" fill="#C8960C"/>
+  <rect x="45" y="25" width="19" height="14" fill="#2D3D57"/>
+  <rect x="0"  y="50" width="26" height="14" fill="#4A7C6F"/>
+  <rect x="26" y="50" width="38" height="14" fill="#2D3D57"/>
+</svg>
