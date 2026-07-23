@@ -3,7 +3,7 @@
 
 Usage::
 
-    # 1. Bootstrap raw datasets (downloads LJSpeech + UrbanSound8K)
+    # 1. Bootstrap raw datasets (downloads LJSpeech + UrbanSound8K) 
     python run.py bootstrap
 
     # 2. Generate train/val/test pairs
