@@ -8,7 +8,8 @@
  * https://squidfunk.github.io/mkdocs-material/setup/changing-the-colors/#custom-colors
  */
 
-:root {
+:root,
+[data-md-color-scheme="default"] {
   /* Primary — header + nav tabs. */
   --md-primary-fg-color: #f5f0e8;
   --md-primary-fg-color--light: #faf6ee;
@@ -40,8 +41,8 @@
   --md-footer-fg-color--light: #b5aca0;
   --md-footer-fg-color--lighter: #8b8278;
 
-  /* Typeset link color, so inline prose links read as brand navy. */
-  --md-typeset-a-color: #3d4f6b;
+  /* Typeset link color */
+  --md-typeset-a-color: #1e3b32;
 }
 
 /* The cream banner matches the page background, so add a hairline rule to
@@ -49,6 +50,12 @@
    Material's scroll shadow appears). */
 .md-header {
   border-bottom: 1px solid #d6cfc4;
+}
+
+/* Material reuses the typeset link color for the active nav/TOC item */
+.md-nav__item .md-nav__link--active,
+.md-nav__item .md-nav__link--active code {
+  color: #2f4d44;
 }
 
 /* Admonitions recolored onto the brand accents rather than Material's

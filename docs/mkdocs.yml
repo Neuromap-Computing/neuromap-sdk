@@ -20,7 +20,7 @@ theme:
     - navigation.sections
 
 extra_css:
-  - stylesheets/extra.css
+  - stylesheets/extra.css?v=5
 
 plugins:
   - search
