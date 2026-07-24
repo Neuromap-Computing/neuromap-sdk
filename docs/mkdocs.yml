@@ -12,8 +12,8 @@ theme:
     text: Space Grotesk
   palette:
     scheme: default
-    primary: indigo
-    accent: teal
+    primary: custom
+    accent: custom
   features:
     - content.code.copy
     - navigation.tabs

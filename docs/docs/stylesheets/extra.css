@@ -9,12 +9,12 @@
  */
 
 :root {
-  /* Primary — used for the header, nav tabs, and links (brand navy). */
-  --md-primary-fg-color: #3d4f6b;
-  --md-primary-fg-color--light: #5c6f8b;
-  --md-primary-fg-color--dark: #2d3d57;
-  --md-primary-bg-color: #f5f0e8;
-  --md-primary-bg-color--light: hsla(40, 32%, 94%, 0.7);
+  /* Primary — header + nav tabs. */
+  --md-primary-fg-color: #f5f0e8;
+  --md-primary-fg-color--light: #faf6ee;
+  --md-primary-fg-color--dark: #ede8df;
+  --md-primary-bg-color: #2c2c2c;
+  --md-primary-bg-color--light: rgba(44, 44, 44, 0.7);
 
   /* Accent — used for hover states, active links, search highlights. */
   --md-accent-fg-color: #4a7c6f;
@@ -42,6 +42,13 @@
 
   /* Typeset link color, so inline prose links read as brand navy. */
   --md-typeset-a-color: #3d4f6b;
+}
+
+/* The cream banner matches the page background, so add a hairline rule to
+   keep the header delineated when the page is scrolled to the top (before
+   Material's scroll shadow appears). */
+.md-header {
+  border-bottom: 1px solid #d6cfc4;
 }
 
 /* Admonitions recolored onto the brand accents rather than Material's
