@@ -19,9 +19,9 @@ classifiers = [
 packages = [{ include = "neuromap", from = "src" }]
 
 [tool.poetry.urls]
-Homepage = "https://neuromap-two.vercel.app"
-Repository = "https://github.com/laurent-colas/neuromap"
-"Bug Tracker" = "https://github.com/laurent-colas/neuromap/issues"
+Homepage = "https://neuromap.ca"
+Repository = "https://github.com/Neuromap-Computing/neuromap-sdk"
+"Bug Tracker" = "https://github.com/Neuromap-Computing/neuromap-sdk/issues"
 
 [tool.poetry.dependencies]
 python = ">=3.10,<4.0"

@@ -1,7 +1,8 @@
 site_name: Neuromap Docs
 site_description: Documentation for the Neuromap SDK, Studio, and data ingestion
 site_url: https://docs.neuromap.ca/
-repo_url: https://github.com/laurent-colas/neuromap
+repo_url: https://github.com/Neuromap-Computing/neuromap-sdk
+edit_uri: edit/main/docs/docs/
 
 theme:
   name: material
