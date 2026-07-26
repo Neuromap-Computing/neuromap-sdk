@@ -1,6 +1,14 @@
 # Neuromap SDK
 
-Python SDK for programming Neuromap neuromorphic chips.
+Python SDK for programming Neuromap neuromorphic chips. Build, train, quantize
+and export spiking neural networks that fit real silicon — the NeuroSoC-v1
+targets 48 LIF neurons, 512 4-bit synapses and 16 input pins.
+
+Built on [PyTorch](https://pytorch.org/) and
+[snnTorch](https://snntorch.readthedocs.io/). Requires Python 3.10+.
+
+- Full documentation: **[docs.neuromap.ca](https://docs.neuromap.ca/)**
+- Homepage: [neuromap.ca](https://neuromap.ca)
 
 ## Installation
 
@@ -14,6 +22,10 @@ For development (using Poetry):
 cd neuro-sim
 poetry install --with dev
 ```
+
+A worked end-to-end pipeline lives in
+[`examples/prosthesis/`](examples/prosthesis/) (EMG → spike encoding → training →
+export).
 
 ## Quick Start
 
