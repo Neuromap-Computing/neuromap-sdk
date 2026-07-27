@@ -244,10 +244,12 @@ SYNC_BYTE = 0xAA
 PROTOCOL_VERSION = 0x01
 MAX_PAYLOAD = 4096
 
+
 class Cmd(enum.IntEnum):
     PING = 0x01
     PONG = 0x02
     # ... all command IDs
+
 
 @dataclass(frozen=True)
 class Packet:
@@ -261,8 +263,10 @@ class Packet:
     @classmethod
     def decode(cls, data: bytes) -> Packet: ...
 
+
 class PacketCodec:
     """Stateful stream decoder - feed raw bytes, get complete packets."""
+
     def feed(self, data: bytes) -> list[Packet]: ...
 ```
 
@@ -271,6 +275,7 @@ class PacketCodec:
 ```python
 class Transport(ABC):
     """Abstract byte-stream transport."""
+
     def open(self) -> None: ...
     def close(self) -> None: ...
     def write(self, data: bytes) -> None: ...
@@ -278,12 +283,16 @@ class Transport(ABC):
     @property
     def is_open(self) -> bool: ...
 
+
 class SerialTransport(Transport):
     """USB CDC serial via pyserial."""
+
     def __init__(self, port: str, baudrate: int = 115200): ...
+
 
 class MockTransport(Transport):
     """In-memory transport for testing without hardware."""
+
 
 class MockFirmware:
     """Simulates MCU firmware using DynamicSNN model.
@@ -291,6 +300,7 @@ class MockFirmware:
     Board.mock() produces numerically identical results to Network.infer(),
     so developers can build apps without the physical board.
     """
+
     def __init__(self, chip: ChipSpec): ...
     def process_packet(self, packet: Packet) -> list[Packet]: ...
 ```
@@ -300,6 +310,7 @@ class MockFirmware:
 ```python
 def pack_weights_nibble(weights: np.ndarray, bits: int = 4) -> bytes:
     """Pack int8 weight matrix into nibble-packed bytes for ASIC SRAM."""
+
 
 def unpack_weights_nibble(data: bytes, rows: int, cols: int, bits: int = 4) -> np.ndarray:
     """Unpack nibble bytes back to int8 matrix."""
@@ -318,6 +329,7 @@ class BoardInfo:
     chip_spec: ChipSpec
     serial_port: str
     status: str  # "idle" | "inferring" | "error"
+
 
 class Board:
     # -- Discovery --
@@ -480,8 +492,8 @@ net = Network(chips.NEUROSOC_V1)
 trainer = Trainer(net, epochs=20)
 trainer.fit(train_loader, val_loader)
 
-board = Board.connect()      # auto-discover USB
-net.deploy(board)            # quantize + flash + verify
+board = Board.connect()  # auto-discover USB
+net.deploy(board)  # quantize + flash + verify
 
 output = board.inject(input_spikes)
 ```
@@ -518,9 +530,9 @@ neuromap info --json
 ### Development Without Hardware
 
 ```python
-board = Board.mock()          # software simulation
-net.deploy(board)             # works identically
-output = board.inject(spikes) # runs DynamicSNN internally
+board = Board.mock()  # software simulation
+net.deploy(board)  # works identically
+output = board.inject(spikes)  # runs DynamicSNN internally
 ```
 
 ---

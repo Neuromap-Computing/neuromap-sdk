@@ -55,8 +55,8 @@ Inputs are spike tensors shaped `(batch, time_steps, input_size)`:
 ```python
 import torch
 
-x = torch.rand(1, 50, 16)   # (batch, time_steps, input_size)
-y = net.infer(x)            # (batch, output_size)
+x = torch.rand(1, 50, 16)  # (batch, time_steps, input_size)
+y = net.infer(x)  # (batch, output_size)
 ```
 
 To turn raw continuous data into spikes, use `encode_sensor_data`:
@@ -99,7 +99,7 @@ Before training you can swap in a different surrogate gradient:
 ```python
 import neuromap as nm
 
-nm.compile_model(net, surrogate="atan")   # or "fast_sigmoid", etc.
+nm.compile_model(net, surrogate="atan")  # or "fast_sigmoid", etc.
 ```
 
 ## Export

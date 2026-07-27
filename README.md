@@ -204,8 +204,10 @@ These are not part of the stable public API but can be useful for advanced use c
 
 ```python
 from neuromap._internal.lif import NeuromapLIF
-layer = NeuromapLIF(in_features=16, out_features=32, beta=0.9, threshold=1.0,
-                    t_ref=2, output_mem=False)
+
+layer = NeuromapLIF(
+    in_features=16, out_features=32, beta=0.9, threshold=1.0, t_ref=2, output_mem=False
+)
 spikes, state = layer(x_seq, state=None, return_state=True)
 # also: NeuromapLIF.from_neuron_params(in, out, params)
 # also: layer.init_state(batch_size, device=device)
@@ -215,9 +217,10 @@ spikes, state = layer(x_seq, state=None, return_state=True)
 
 ```python
 from neuromap._internal.dynamic_snn import DynamicSNN
+
 snn = DynamicSNN([16, 32, 4], neuron_kwargs=None, use_decoder=True)
-out = snn(x)                        # rate-coded
-out = snn.forward_sequence(x)       # per-frame
+out = snn(x)  # rate-coded
+out = snn.forward_sequence(x)  # per-frame
 out, state = snn(x, return_state=True)
 ```
 
@@ -225,6 +228,7 @@ out, state = snn(x, return_state=True)
 
 ```python
 from neuromap._internal.encoding import encode_rate, encode_latency, encode_delta
+
 spikes = encode_rate(data, num_steps=100)
 spikes = encode_latency(data, num_steps=100)
 spikes = encode_delta(data)
@@ -234,21 +238,24 @@ spikes = encode_delta(data)
 
 ```python
 from neuromap._internal.quantization import quantize_model_weights, quantize_weights_4bit
+
 model = quantize_model_weights(model, bits=4)
-model = quantize_weights_4bit(model)   # convenience alias
+model = quantize_weights_4bit(model)  # convenience alias
 ```
 
 ### `_internal.spike`: surrogate gradients
 
 ```python
 from neuromap._internal.spike import get_surrogate
-grad_fn = get_surrogate("atan")   # "fast_sigmoid", "straight_through", "spike_rate_escape"
+
+grad_fn = get_surrogate("atan")  # "fast_sigmoid", "straight_through", "spike_rate_escape"
 ```
 
 ### `_internal.audio`: audio preprocessing
 
 ```python
 from neuromap._internal.audio import load_audio_mono, frame_audio
+
 audio, sr = load_audio_mono("clip.wav", target_sample_rate=16000)
-frames     = frame_audio(audio, frame_size=256, hop_size=128)
+frames = frame_audio(audio, frame_size=256, hop_size=128)
 ```

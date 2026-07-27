@@ -49,8 +49,8 @@ Predefined profiles are available through the `chips` namespace:
 from neuromap import chips
 
 chip = chips.NEUROSOC_V1
-print(chip.total_neurons)    # 48
-print(chip.total_synapses)   # 512
+print(chip.total_neurons)  # 48
+print(chip.total_synapses)  # 512
 ```
 
 `ChipSpec` is a frozen dataclass, so a spec is immutable once created.
