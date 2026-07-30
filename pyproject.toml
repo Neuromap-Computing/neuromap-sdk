@@ -28,6 +28,10 @@ python = ">=3.10,<4.0"
 torch = ">=2.0"
 numpy = ">=1.24"
 snntorch = ">=0.9"
+# PEP 594 removed `audioop` from the stdlib in Python 3.13. This backport
+# restores the same module so _internal/audio.py keeps its A-law / mu-law
+# decoding on 3.13+ without a code change. No-op on 3.10-3.12.
+audioop-lts = { version = ">=0.2.1", python = ">=3.13" }
 
 [tool.poetry.group.dev.dependencies]
 pytest = ">=7.0"
