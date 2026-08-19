@@ -25,7 +25,16 @@ Repository = "https://github.com/Neuromap-Computing/neuromap-sdk"
 
 [tool.poetry.dependencies]
 python = ">=3.10,<4.0"
-torch = ">=2.0"
+# On Linux (where CI runs), pull the CPU-only wheel: the default PyPI build
+# drags in ~14 unused nvidia-*-cu12 packages on a GPU-less runner. macOS has no
+# wheels on that index, and Windows/macOS dev machines keep the default
+# resolution. GPU users on Linux can reinstall the matching CUDA wheel in their
+# own venv after `poetry install`. This pin does not affect `pip install
+# neuromap` from PyPI, where torch resolves through pip's own default index.
+torch = [
+    { version = ">=2.0", source = "pytorch-cpu", markers = "sys_platform == 'linux'" },
+    { version = ">=2.0", markers = "sys_platform != 'linux'" },
+]
 numpy = ">=1.24"
 snntorch = ">=0.9"
 # PEP 594 removed `audioop` from the stdlib in Python 3.13. This backport
@@ -37,6 +46,11 @@ audioop-lts = { version = ">=0.2.1", python = ">=3.13" }
 pytest = ">=7.0"
 scipy = "*"
 ruff = ">=0.6.0"
+
+[[tool.poetry.source]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+priority = "explicit"
 
 [build-system]
 requires = ["poetry-core"]
