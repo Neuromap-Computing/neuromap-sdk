@@ -16,11 +16,11 @@ Built on [PyTorch](https://pytorch.org/) and
 pip install neuromap
 ```
 
-For development (using Poetry):
+For development (using uv):
 
 ```bash
 cd neuro-sim
-poetry install --with dev
+uv sync
 ```
 
 A worked end-to-end pipeline lives in
@@ -71,7 +71,7 @@ Available encoding methods: `"rate"` (default), `"latency"`, `"delta"`.
 ## Running Tests
 
 ```bash
-poetry run pytest tests/ -v
+uv run pytest tests/ -v
 ```
 
 Or via Nx from the repo root:
@@ -83,8 +83,8 @@ npx nx run neuro-sim:test
 ## Linting and Formatting
 
 ```bash
-poetry run ruff check .
-poetry run ruff format .
+uv run ruff check .
+uv run ruff format .
 ```
 
 ---

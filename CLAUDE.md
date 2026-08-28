@@ -11,14 +11,14 @@ commits.
 ## Commands
 
 ```bash
-npx nx run neuro-sim:test          # poetry run pytest tests/ -v
+npx nx run neuro-sim:test          # uv run pytest tests/ -v
 npx nx run neuro-sim:lint          # ruff check
 npx nx run neuro-sim:format        # ruff format
 npx nx run neuro-sim:format-check  # CI gate
-npx nx run neuro-sim:build         # poetry build (sdist + wheel)
+npx nx run neuro-sim:build         # uv build (sdist + wheel)
 ```
 
-Direct, from `neuro-sim/`: `poetry run pytest tests/test_network.py -v -k quantize`.
+Direct, from `neuro-sim/`: `uv run pytest tests/test_network.py -v -k quantize`.
 
 ## Layout
 
