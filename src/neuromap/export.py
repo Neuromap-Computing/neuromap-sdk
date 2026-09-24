@@ -29,13 +29,13 @@ from neuromap._internal.quantization import quantize_model_weights
 class Exporter:
     """Quantize and serialise a :class:`~neuromap.network.Network`.
 
-    The primary output format is ``.nmap`` — a simple ZIP archive
+    The primary output format is ``.nmap`` - a simple ZIP archive
     containing:
 
-    * ``manifest.json`` — chip spec, topology, quantization metadata.
-    * ``weights/layer_<i>_weight.npy`` — per-layer quantized weight
+    * ``manifest.json`` - chip spec, topology, quantization metadata.
+    * ``weights/layer_<i>_weight.npy`` - per-layer quantized weight
       matrices as integer numpy arrays.
-    * ``weights/layer_<i>_bias.npy`` — per-layer bias vectors.
+    * ``weights/layer_<i>_bias.npy`` - per-layer bias vectors.
 
     Args:
         network: A :class:`~neuromap.network.Network` instance whose
@@ -157,52 +157,14 @@ class Exporter:
     def to_bytes(self) -> bytes:
         """Export the model as in-memory ``.nmap`` bytes.
 
-        This is used by :meth:`Network.deploy` to program a board
-        without writing to disk.
+        Produces the same ZIP archive as :meth:`save` without writing to
+        disk.
 
         Returns:
             ZIP archive bytes identical to what :meth:`save` would write.
         """
-        import hashlib
-
         manifest = self._build_manifest()
         weight_map = self.to_weight_map()
-
-        # Build hw_layout before writing the ZIP so manifest is written once
-        hw_packed: dict[str, bytes] = {}
-        if self._quantized:
-            from neuromap._internal.packing import pack_weights_nibble
-
-            chip = self._network.chip
-            bits = self._bits or chip.weight_bits
-            all_packed = b""
-            hw_layers: list[dict[str, Any]] = []
-            for i in range(len(chip.layers) - 1):
-                for wname, arr in weight_map.items():
-                    if "weight" in wname and arr.ndim == 2:
-                        rows, cols = arr.shape
-                        if rows == chip.layers[i + 1] and cols == chip.layers[i]:
-                            packed = pack_weights_nibble(arr.astype(np.int8), bits=bits)
-                            hw_packed[f"hw/layer_{i}.bin"] = packed
-                            hw_layers.append(
-                                {
-                                    "index": i,
-                                    "file": f"hw/layer_{i}.bin",
-                                    "rows": rows,
-                                    "cols": cols,
-                                    "size_bytes": len(packed),
-                                }
-                            )
-                            all_packed += packed
-                            break
-
-            manifest["hw_layout"] = {
-                "weight_packing": "nibble_signed_4bit",
-                "byte_order": "little",
-                "layers": hw_layers,
-                "total_weight_bytes": len(all_packed),
-            }
-            manifest["deploy_checksum"] = "sha256:" + hashlib.sha256(all_packed).hexdigest()
 
         buf = io.BytesIO()
         with zipfile.ZipFile(buf, "w", compression=zipfile.ZIP_DEFLATED) as zf:
@@ -211,8 +173,6 @@ class Exporter:
                 nbuf = io.BytesIO()
                 np.save(nbuf, arr, allow_pickle=False)
                 zf.writestr(f"weights/{name}.npy", nbuf.getvalue())
-            for hw_name, hw_data in hw_packed.items():
-                zf.writestr(hw_name, hw_data)
 
         return buf.getvalue()
 

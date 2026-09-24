@@ -1,15 +1,26 @@
-site_name: Neuromap SDK
-site_description: SDK for programming Neuromap neuromorphic chips
-repo_url: https://github.com/neuromap/neuromap
+site_name: Neuromap Docs
+site_description: Documentation for the Neuromap SDK, Studio, and data ingestion
+site_url: https://docs.neuromap.ca/
+repo_url: https://github.com/Neuromap-Computing/neuromap-sdk
+edit_uri: edit/main/docs/docs/
 
 theme:
   name: material
+  logo: assets/logo.svg
+  favicon: assets/favicon.ico
+  font:
+    text: Space Grotesk
   palette:
     scheme: default
-    primary: indigo
+    primary: custom
+    accent: custom
   features:
     - content.code.copy
+    - navigation.tabs
     - navigation.sections
+
+extra_css:
+  - stylesheets/extra.css?v=5
 
 plugins:
   - search
@@ -23,19 +34,20 @@ plugins:
             members_order: source
 
 nav:
-  - Home: index.md
-  - Quickstart: quickstart.md
-  - Concepts: concepts.md
-  - Board Guide: board.md
-  - Protocol Reference: protocol.md
-  - API Reference:
-      - chip: api/chip.md
-      - network: api/network.md
-      - trainer: api/trainer.md
-      - export: api/export.md
-      - board: api/board.md
-      - monitor: api/monitor.md
-  - CLI Reference: cli.md
+  - SDK:
+      - Home: index.md
+      - Quickstart: quickstart.md
+      - Concepts: concepts.md
+      - API Reference:
+          - convenience: api/convenience.md
+          - chip: api/chip.md
+          - network: api/network.md
+          - trainer: api/trainer.md
+          - export: api/export.md
+  - Studio:
+      - Overview: studio/index.md
+  - Ingestion:
+      - Overview: ingestion/index.md
 
 markdown_extensions:
   - pymdownx.highlight

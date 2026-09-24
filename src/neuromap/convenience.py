@@ -26,12 +26,14 @@ def encode_sensor_data(
 
     Args:
         data: Input tensor.  For ``"rate"`` and ``"latency"`` methods
-            the shape should be ``(batch, features)`` with values in
-            ``[0, 1]``.  For ``"delta"`` the shape should be
+            the shape should be ``(batch, features)`` (or ``(time, features)``
+            for a single trace).  Values should be in ``[0, 1]``; otherwise
+            they are min-max scaled per feature over leading dimensions.
+            For ``"delta"`` the shape should be
             ``(batch, time_steps, features)``.
         num_steps: Number of time steps (used by ``"rate"`` and
             ``"latency"``).
-        method: Encoding strategy — ``"rate"``, ``"latency"``, or
+        method: Encoding strategy - ``"rate"``, ``"latency"``, or
             ``"delta"``.
         **kwargs: Extra arguments forwarded to the underlying encoder.
 

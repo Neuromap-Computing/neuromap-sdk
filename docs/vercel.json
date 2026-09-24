@@ -1,5 +1,0 @@
-{
-  "buildCommand": "pip install --break-system-packages -r requirements-docs.txt && pip install --break-system-packages -e .. && python -m mkdocs build",
-  "outputDirectory": "site",
-  "framework": null
-}

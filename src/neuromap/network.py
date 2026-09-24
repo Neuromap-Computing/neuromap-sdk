@@ -189,7 +189,7 @@ class Network:
         x_chunk: torch.Tensor,
         state: Mapping[str, Mapping[str, Any]] | None = None,
     ) -> tuple[torch.Tensor, dict[str, Any]]:
-        """Stateful streaming inference — process one chunk at a time.
+        """Stateful streaming inference - process one chunk at a time.
 
         Args:
             x_chunk: Input chunk ``(batch, time_steps, input_size)``.
@@ -222,34 +222,6 @@ class Network:
         if self._chip.energy_per_spike_fj is not None:
             lines.append(f"  Energy/spike  : {self._chip.energy_per_spike_fj} fJ")
         return "\n".join(lines)
-
-    # -- deploy -------------------------------------------------------------------
-
-    def deploy(self, board: Any, *, verify: bool = True) -> None:
-        """One-liner deploy: quantize, export, and program the board.
-
-        This is the "Arduino upload" experience::
-
-            board = Board.connect()
-            net.deploy(board)
-
-        Args:
-            board: A :class:`~neuromap.board.Board` instance (real or mock).
-            verify: Whether to verify weights on-chip after programming.
-
-        Raises:
-            RuntimeError: If verification fails.
-        """
-        from neuromap.export import Exporter
-
-        exporter = Exporter(self)
-        exporter.quantize()
-        nmap_bytes = exporter.to_bytes()
-        board.program(nmap_bytes)
-        if verify:
-            ok = board.verify()
-            if not ok:
-                raise RuntimeError("Weight verification failed after deploy.")
 
     # -- persistence --------------------------------------------------------------
 

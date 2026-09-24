@@ -1,0 +1,84 @@
+/*
+ * Neuromap brand theme for the MkDocs Material docs site.
+ * Mirrors the color tokens and type scale defined in
+ * website/src/app/globals.css so docs.neuromap.ca reads as the same
+ * product as neuromap.ca. Uses Material's documented "custom colors"
+ * recipe: redeclare the CSS variables it exposes on `:root`, which wins
+ * the cascade over the palette Material picked from `mkdocs.yml`.
+ * https://squidfunk.github.io/mkdocs-material/setup/changing-the-colors/#custom-colors
+ */
+
+:root,
+[data-md-color-scheme="default"] {
+  /* Primary — header + nav tabs. */
+  --md-primary-fg-color: #f5f0e8;
+  --md-primary-fg-color--light: #faf6ee;
+  --md-primary-fg-color--dark: #ede8df;
+  --md-primary-bg-color: #2c2c2c;
+  --md-primary-bg-color--light: rgba(44, 44, 44, 0.7);
+
+  /* Accent — used for hover states, active links, search highlights. */
+  --md-accent-fg-color: #4a7c6f;
+  --md-accent-fg-color--transparent: rgba(74, 124, 111, 0.1);
+  --md-accent-bg-color: #f5f0e8;
+  --md-accent-bg-color--light: #f5f0e8;
+
+  /* Page surface — warm cream, matching the website background. */
+  --md-default-bg-color: #f5f0e8;
+  --md-default-fg-color: #2c2c2c;
+  --md-default-fg-color--light: #5c5850;
+  --md-default-fg-color--lighter: #8b8278;
+  --md-default-fg-color--lightest: #d6cfc4;
+
+  /* Code blocks — warm neutral instead of Material's cool gray. */
+  --md-code-bg-color: #ede8df;
+  --md-code-fg-color: #3d3830;
+
+  /* Footer — near-charcoal, matching the website footer. */
+  --md-footer-bg-color: #2c2c2c;
+  --md-footer-bg-color--dark: #1a1917;
+  --md-footer-fg-color: #f5f0e8;
+  --md-footer-fg-color--light: #b5aca0;
+  --md-footer-fg-color--lighter: #8b8278;
+
+  /* Typeset link color */
+  --md-typeset-a-color: #1e3b32;
+}
+
+/* The cream banner matches the page background, so add a hairline rule to
+   keep the header delineated when the page is scrolled to the top (before
+   Material's scroll shadow appears). */
+.md-header {
+  border-bottom: 1px solid #d6cfc4;
+}
+
+/* Material reuses the typeset link color for the active nav/TOC item */
+.md-nav__item .md-nav__link--active,
+.md-nav__item .md-nav__link--active code {
+  color: #2f4d44;
+}
+
+/* Admonitions recolored onto the brand accents rather than Material's
+   default blue/orange/red set, so callouts stay inside the palette. */
+.md-typeset .admonition.tip,
+.md-typeset .admonition.note {
+  border-color: #4a7c6f;
+}
+.md-typeset .tip > .admonition-title,
+.md-typeset .note > .admonition-title {
+  background-color: rgba(74, 124, 111, 0.1);
+}
+.md-typeset .tip > .admonition-title::before,
+.md-typeset .note > .admonition-title::before {
+  background-color: #4a7c6f;
+}
+
+.md-typeset .admonition.warning {
+  border-color: #c8960c;
+}
+.md-typeset .warning > .admonition-title {
+  background-color: rgba(200, 150, 12, 0.1);
+}
+.md-typeset .warning > .admonition-title::before {
+  background-color: #c8960c;
+}
